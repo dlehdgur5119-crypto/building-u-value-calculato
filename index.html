@@ -1,0 +1,1599 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>교체주기 확인</title>
+<meta name="description" content="생활가전·개인용품 소모품의 청소·교체 주기와 재고·비용을 관리하는 대시보드">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0C1218; --panel:#121A23; --panel-2:#18222D; --raise:#1E2935;
+  --line:#243140; --line-2:#33424F;
+  --ink:#E3EAF1; --ink-2:#A6B3C1; --muted:#738397;
+  --accent:#D3E0EC; --accent-ink:#0C1218;
+  --st-normal:#4E9CF2; --st-good:#3DBE85; --st-soon:#E3C04B; --st-due:#F08B3C; --st-over:#EF5561;
+  --pleat-off:#222D39; --bar:#6F8AA6;
+  --shadow:0 18px 48px rgba(0,0,0,.45);
+  --f-display:"Chakra Petch","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-label:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Apple SD Gothic Neo","Malgun Gothic",monospace;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme:light;
+    --bg:#ECF0F4; --panel:#FFFFFF; --panel-2:#F4F7FA; --raise:#E7ECF1;
+    --line:#D6DEE6; --line-2:#C1CCD8;
+    --ink:#13202C; --ink-2:#3B4A5A; --muted:#627284;
+    --accent:#16222E; --accent-ink:#FFFFFF;
+    --st-normal:#1E6DCC; --st-good:#16865A; --st-soon:#9C7700; --st-due:#C45709; --st-over:#C92C39;
+    --pleat-off:#DDE4EB; --bar:#6C8196;
+    --shadow:0 18px 48px rgba(20,32,44,.16);
+  }
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#ECF0F4; --panel:#FFFFFF; --panel-2:#F4F7FA; --raise:#E7ECF1;
+  --line:#D6DEE6; --line-2:#C1CCD8;
+  --ink:#13202C; --ink-2:#3B4A5A; --muted:#627284;
+  --accent:#16222E; --accent-ink:#FFFFFF;
+  --st-normal:#1E6DCC; --st-good:#16865A; --st-soon:#9C7700; --st-due:#C45709; --st-over:#C92C39;
+  --pleat-off:#DDE4EB; --bar:#6C8196;
+  --shadow:0 18px 48px rgba(20,32,44,.16);
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 var(--f-body);-webkit-font-smoothing:antialiased;word-break:keep-all}
+button,input,select,textarea{font:inherit;color:inherit}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.ink2{color:var(--ink-2)}
+h1,h2,h3{margin:0;text-wrap:balance}
+
+/* status class system: one variable drives pills, pleats, D-day text */
+.st-normal{--c:var(--st-normal)} .st-soon{--c:var(--st-soon)} .st-due{--c:var(--st-due)}
+.st-overdue{--c:var(--st-over)} .st-good{--c:var(--st-good)} .st-nodata{--c:var(--muted)}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;display:flex;flex-direction:column;gap:22px;padding:22px 14px;border-right:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px}
+.brand svg{flex:none}
+.brand b{display:block;font-weight:700;font-size:18px;letter-spacing:-.01em;line-height:1.2}
+.brand small{display:block;font-size:11px;color:var(--muted);line-height:1.3}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:9px 10px;border:0;border-radius:7px;background:transparent;color:var(--ink-2);cursor:pointer;text-align:left;font-size:14px}
+.nav button:hover{background:var(--panel-2);color:var(--ink)}
+.nav button[aria-current="page"]{background:var(--raise);color:var(--ink);font-weight:600}
+.nav .badge{font-family:var(--f-mono);font-size:11px;min-width:22px;padding:1px 6px;border-radius:10px;text-align:center;color:var(--c,var(--muted));background:color-mix(in srgb,var(--c,var(--muted)) 16%,transparent)}
+.side-foot{margin-top:auto;display:grid;gap:8px;padding:12px 8px 0;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.side-foot b{color:var(--ink-2);font-weight:500;font-family:var(--f-mono)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c);margin-right:6px;vertical-align:1px}
+
+.main{min-width:0;padding-inline:28px;padding-block:22px 48px}
+.topbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:20px}
+.topbar h1{font-weight:700;font-size:26px;letter-spacing:-.01em;line-height:1.15}
+.topbar p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.sample-chip{display:inline-flex;align-items:center;gap:6px;margin-left:10px;padding:2px 8px;border:1px dashed var(--line-2);border-radius:5px;font-size:11.5px;font-weight:500;color:var(--muted);vertical-align:5px}
+
+/* ---------- controls ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;border:1px solid var(--line-2);border-radius:7px;background:var(--panel-2);color:var(--ink);cursor:pointer;font-family:var(--f-label);font-size:13px;font-weight:500;white-space:nowrap;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--raise);border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.sm{padding:4px 9px;font-size:12px;border-radius:6px}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--st-over);border-color:color-mix(in srgb,var(--st-over) 45%,transparent);background:transparent}
+.btn.danger:hover{background:color-mix(in srgb,var(--st-over) 12%,transparent)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.act-clean{border-color:color-mix(in srgb,var(--st-normal) 45%,var(--line-2))}
+.btn.act-repl{border-color:color-mix(in srgb,var(--st-good) 45%,var(--line-2))}
+:focus-visible{outline:2px solid var(--st-normal);outline-offset:2px}
+
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-family:var(--f-label);font-size:11.5px;font-weight:600;white-space:nowrap;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 38%,transparent)}
+.pill::before{content:"";width:6px;height:6px;border-radius:1px;background:var(--c)}
+.pill.st-overdue::before{transform:rotate(45deg)}
+.dd{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:500;color:var(--c)}
+
+.pleats{display:grid;grid-template-columns:repeat(20,1fr);gap:2px;width:100%;height:10px}
+.pleats i{display:block;background:var(--pleat-off);transform:skewX(-16deg);border-radius:1px}
+.pleats i.on{background:var(--c)}
+.pleats.thin{height:7px}
+
+input[type=text],input[type=number],input[type=date],input[type=search],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--panel-2);color:var(--ink);font-size:13.5px}
+textarea{min-height:90px;font-family:var(--f-mono);font-size:12px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--st-normal);box-shadow:0 0 0 3px color-mix(in srgb,var(--st-normal) 22%,transparent)}
+input:disabled,select:disabled{opacity:.4}
+.fld{display:grid;gap:5px;min-width:0}
+.fld>span{font-size:12px;font-weight:500;color:var(--muted)}
+.fld small{color:var(--muted);font-size:11.5px;line-height:1.4}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:5px 11px;border:1px solid var(--line-2);border-radius:20px;background:transparent;color:var(--ink-2);cursor:pointer;font-family:var(--f-label);font-size:12px}
+.chip:hover{border-color:var(--muted);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+
+/* ---------- panels ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.panel-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 12px;margin-bottom:14px}
+.eyebrow{font-family:var(--f-label);font-size:13px;font-weight:700;color:var(--ink-2)}
+.panel-h .note{font-size:12px;color:var(--muted)}
+.stack{display:grid;gap:18px}
+.grid-2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.grid-2e{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kpi{background:var(--panel);padding:16px 18px;display:grid;gap:4px;align-content:start}
+.kpi .lbl{font-size:12.5px;font-weight:600;color:var(--muted)}
+.kpi .val{font-family:var(--f-display);font-weight:600;font-size:34px;line-height:1.05;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.kpi .val.warn{color:var(--st-due)} .kpi .val.bad{color:var(--st-over)}
+.kpi .sub{font-size:12px;color:var(--muted)}
+
+/* attention list */
+.att{display:grid}
+.att-row{display:grid;grid-template-columns:76px minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.att-row:first-child{border-top:0;padding-top:2px}
+.att.wide .att-row{grid-template-columns:96px minmax(0,1fr) auto auto}
+.att-row .what b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att-row .what span{font-size:12px;color:var(--muted)}
+.att-row .dd{font-size:16px;text-align:right;min-width:62px}
+.empty{padding:18px 0;color:var(--muted);font-size:13px}
+
+/* priority */
+.prio-list{display:grid;gap:10px;margin:0;padding:0;list-style:none;counter-reset:p}
+.prio-list li{display:grid;grid-template-columns:22px minmax(0,1fr) 40px;gap:10px;align-items:center;counter-increment:p}
+.prio-list li::before{content:counter(p);font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.prio-list .nm{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prio-list .track{height:5px;border-radius:3px;background:var(--pleat-off);margin-top:5px;overflow:hidden}
+.prio-list .track i{display:block;height:100%;border-radius:3px;background:var(--c)}
+.prio-list .sc{font-family:var(--f-mono);font-size:15px;text-align:right;font-variant-numeric:tabular-nums}
+
+.counts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.counts div{display:grid;gap:2px}
+.counts .lbl{font-size:12px;font-weight:500;color:var(--muted)}
+.counts .v{font-family:var(--f-display);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.counts .v small{font-family:var(--f-body);font-size:12px;font-weight:400;color:var(--muted);margin-left:3px}
+
+/* charts */
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.donut-wrap{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;align-items:center}
+.legend{display:grid;gap:7px;margin:0;padding:0;list-style:none;font-size:13px}
+.legend li{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:8px;align-items:center}
+.legend .sw{width:10px;height:10px;border-radius:2px;background:var(--c)}
+.legend .n{font-family:var(--f-mono);color:var(--ink-2)}
+.chart .cap{margin-top:8px;font-size:11.5px;color:var(--muted)}
+.hit{cursor:default}
+.hit:hover{opacity:.82}
+
+/* table */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:14px}
+.toolbar .search{flex:1 1 220px;max-width:320px}
+.tbl-wrap{overflow-x:auto;margin:0 -18px;padding:0 18px}
+table.tbl{width:100%;border-collapse:collapse;min-width:1120px;font-size:13px}
+.tbl th{position:sticky;top:0;text-align:left;font-size:12px;font-weight:600;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line-2);background:var(--panel);white-space:nowrap}
+.tbl td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+.tbl td.wrap{white-space:normal}
+.tbl tr:hover td{background:color-mix(in srgb,var(--panel-2) 70%,transparent)}
+.tbl td small{display:block;color:var(--muted);font-size:11.5px}
+.tbl .r{text-align:right}
+.tbl .life{min-width:120px}
+.tbl .life small{margin-top:4px}
+.tbl .acts{display:flex;gap:5px;flex-wrap:nowrap}
+.pscore{display:grid;gap:4px;min-width:54px}
+.pscore b{font-family:var(--f-mono);font-weight:500;font-size:14px}
+.pscore .track{height:4px;border-radius:2px;background:var(--pleat-off);overflow:hidden}
+.pscore .track i{display:block;height:100%;background:var(--ink-2)}
+
+/* devices */
+.dev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px;align-items:start}
+.dev{display:grid;gap:0;padding:0;overflow:hidden}
+.dev-h{padding:16px 18px 12px;display:grid;gap:3px;border-bottom:1px solid var(--line)}
+.dev-h .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.dev-h h3{font-size:16px;font-weight:600}
+.dev-h .meta{font-size:12px;color:var(--muted)}
+.dev-f{padding:14px 18px;display:grid;gap:10px;border-bottom:1px solid var(--line)}
+.dev-f:last-of-type{border-bottom:0}
+.dev-f .fh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dev-f .fh b{font-weight:500}
+.task{display:grid;grid-template-columns:40px 58px minmax(0,1fr);gap:10px;align-items:center;font-size:12px}
+.task .k{font-size:12px;font-weight:600;color:var(--muted)}
+.task .dd{font-size:13px}
+.dev-f .acts{display:flex;flex-wrap:wrap;gap:6px}
+.dev-foot{padding:12px 18px;display:flex;gap:6px;flex-wrap:wrap;background:var(--panel-2);border-top:1px solid var(--line)}
+.stockline{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* calc sheet */
+.sheet{display:grid;gap:14px}
+.sheet-h{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:space-between;align-items:center}
+.sheet-h h3{font-size:15px;font-weight:600}
+.sheet-h h3 span{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
+.sheet-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.calc{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--panel-2)}
+.calc dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:8px 0 0;font-size:12.5px}
+.calc dt{color:var(--muted);font-size:12px;padding-top:1px}
+.calc dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.calc .formula{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line-2);font-size:12px;color:var(--ink-2);line-height:1.6;font-variant-numeric:tabular-nums}
+.pparts{display:grid;gap:7px;margin-top:8px}
+.pparts div{display:grid;grid-template-columns:96px minmax(0,1fr) 34px;gap:8px;align-items:center;font-size:12px}
+.pparts span{color:var(--muted);font-size:12px}
+.pparts .track{height:6px;border-radius:3px;background:var(--pleat-off);overflow:hidden}
+.pparts .track i{display:block;height:100%;background:var(--ink-2)}
+.pparts b{font-family:var(--f-mono);font-weight:500;text-align:right;font-size:11.5px}
+
+/* maintenance */
+.bucket h4{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.bucket + .bucket{margin-top:18px}
+
+/* calendar */
+.cal-nav{display:flex;align-items:center;gap:8px}
+.cal-nav h2{font-size:20px;font-weight:700;min-width:150px;text-align:center}
+.cal-scroll{overflow-x:auto}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));min-width:700px;border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.cal .wd{padding:6px 8px;font-size:12px;font-weight:600;color:var(--muted);border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel-2)}
+.cal .day{min-height:104px;padding:6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.cal .day.out{background:color-mix(in srgb,var(--panel-2) 60%,transparent)}
+.cal .day .n{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.cal .day.today{box-shadow:inset 0 0 0 2px var(--st-normal)}
+.cal .day.today .n{color:var(--st-normal);font-weight:500}
+.ev{display:block;padding:2px 5px;border-radius:4px;font-size:11px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);background:color-mix(in srgb,var(--c) 16%,transparent);border-left:2px solid var(--c)}
+.ev.done{opacity:.6;border-left-style:dotted}
+.ev .t{font-size:10.5px;font-weight:700;color:var(--c);margin-right:4px}
+.agenda{display:grid;margin-top:4px}
+.agenda-row{display:grid;grid-template-columns:92px 84px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+
+/* settings */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.method{font-size:13px;line-height:1.7;color:var(--ink-2)}
+.method code{font-size:12.5px;background:var(--panel-2);border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--ink);font-family:var(--f-body)}
+.method ul{margin:6px 0 0;padding-left:18px}
+.method li{margin:3px 0}
+
+/* summary */
+.summary{font-size:13.5px;line-height:1.75}
+.summary p{margin:0 0 8px}
+.summary .tag{font-size:12px;font-weight:700;color:var(--muted);margin-right:6px}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(5,9,13,.62);backdrop-filter:blur(2px)}
+.modal-card{width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--line-2);border-radius:12px;box-shadow:var(--shadow)}
+.modal-card.narrow{width:min(440px,100%)}
+.modal-h{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.modal-h h2{font-size:17px;font-weight:700}
+.modal-b{padding:18px;display:grid;gap:16px}
+.modal-f{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:14px 18px;border-top:1px solid var(--line);background:var(--panel-2);position:sticky;bottom:0}
+.modal-f .right{display:flex;gap:8px;margin-left:auto}
+.fs{border:1px solid var(--line);border-radius:8px;padding:12px 14px 14px;margin:0;display:grid;gap:12px}
+.fs legend{padding:0 6px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.preview .calc{background:var(--panel-2)}
+.err{color:var(--st-over);font-size:12.5px;min-height:1em}
+.check{display:flex;gap:8px;align-items:center;font-size:13px}
+
+/* toast & tip */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;max-width:calc(100% - 32px);padding:10px 12px 10px 16px;border:1px solid var(--line-2);border-radius:9px;background:var(--raise);color:var(--ink);box-shadow:var(--shadow);font-size:13px}
+.tip{position:fixed;z-index:70;pointer-events:none;padding:6px 9px;border-radius:6px;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.4;max-width:260px;white-space:pre-line;box-shadow:var(--shadow)}
+
+/* responsive */
+@media (max-width:1180px){
+  .grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-3>.chart:last-child{grid-column:1/-1}
+}
+@media (max-width:920px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;align-items:center;gap:14px;padding:12px 16px;border-right:0;border-bottom:1px solid var(--line);overflow:hidden}
+  .brand small{display:none}
+  .brand b{font-size:16px;white-space:nowrap}
+  .nav{flex-direction:row;overflow-x:auto;gap:4px;min-width:0;flex:1;scrollbar-width:none}
+  .nav button{width:auto;white-space:nowrap;padding:7px 10px}
+  .side-foot{display:none}
+  .main{padding-inline:16px}
+  .grid-2,.grid-2e{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .att.wide .att-row{grid-template-columns:minmax(0,1fr) auto}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-3{grid-template-columns:1fr}
+  .donut-wrap{grid-template-columns:120px minmax(0,1fr)}
+  .att-row{grid-template-columns:minmax(0,1fr) auto;row-gap:6px}
+  .att-row .pill{grid-column:1/-1;justify-self:start}
+  .att-row .btn{grid-column:1/-1;justify-self:start}
+  .agenda-row{grid-template-columns:78px minmax(0,1fr);row-gap:4px}
+  .dev-grid{grid-template-columns:1fr}
+  .topbar h1{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+        <rect x="1" y="1" width="28" height="28" rx="6" style="fill:none;stroke:var(--line-2);stroke-width:1.5"></rect>
+        <path d="M6 22 L9 8 L12 22 L15 8 L18 22 L21 8 L24 22" style="fill:none;stroke:var(--st-normal);stroke-width:2;stroke-linejoin:round;stroke-linecap:round"></path>
+      </svg>
+      <div><b>교체주기 확인</b><small>소모품 청소·교체 관리</small></div>
+    </div>
+    <nav class="nav" id="nav" aria-label="주 메뉴"></nav>
+    <div class="side-foot" id="side-foot"></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="view-title">대시보드</h1>
+        <p id="view-sub"></p>
+      </div>
+      <div class="actions">
+        <button class="btn" type="button" data-act="add-device">+ 장비 추가</button>
+        <button class="btn primary" type="button" data-act="add-filter">+ 소모품 추가</button>
+      </div>
+    </header>
+    <section id="view"></section>
+  </main>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" id="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-h"><h2 id="modal-title"></h2><button class="btn sm ghost" type="button" data-act="modal-close">닫기</button></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+/* =========================================================
+   0. Utilities
+   ========================================================= */
+const KEY = 'filtercare.v1';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const DAY = 864e5;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const localToday = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+let TODAY = localToday();
+const toMs = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+const fromMs = ms => { const d = new Date(ms); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); };
+const addDays = (s, n) => fromMs(toMs(s) + n * DAY);
+const diffDays = (a, b) => Math.round((toMs(b) - toMs(a)) / DAY);        // b − a
+const isDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const won = n => '₩' + Math.round(n || 0).toLocaleString('ko-KR');
+const wonShort = n => n >= 10000 ? '₩' + (Math.round(n / 1000) / 10).toLocaleString('ko-KR') + '만' : won(n);
+const mmdd = s => s ? s.slice(5).replace('-', '.') : '—';
+const dotDate = s => s ? s.replace(/-/g, '.') : '—';
+const monthEnd = ym => { const [y, m] = ym.split('-').map(Number); return fromMs(Date.UTC(y, m, 0)); };
+const addMonths = (ym, k) => { const [y, m] = ym.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + k, 1)); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1); };
+
+/* =========================================================
+   1. Reference data (templates are editable defaults, not manufacturer specs)
+   ========================================================= */
+const TEMPLATES = {
+  'Air Purifier':   { label:'공기청정기', group:'Air', filters:[
+    { name:'프리필터', filterType:'Pre', maintenanceType:'cleaning', cleaningCycle:14, replacementCycle:null, referenceDailyUsage:8, usageUnit:'h/day', replacementCost:0, importance:3 },
+    { name:'헤파필터', filterType:'HEPA', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:180, referenceDailyUsage:8, usageUnit:'h/day', replacementCost:38000, importance:4 },
+    { name:'탈취필터', filterType:'Deodorizing', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:180, referenceDailyUsage:8, usageUnit:'h/day', replacementCost:25000, importance:3 } ]},
+  'Air Conditioner':{ label:'에어컨', group:'Air', filters:[
+    { name:'프리필터', filterType:'Pre', maintenanceType:'cleaning', cleaningCycle:14, replacementCycle:null, referenceDailyUsage:8, usageUnit:'h/day', replacementCost:0, importance:4 } ]},
+  'Vacuum Cleaner': { label:'청소기', group:'Cleaning', filters:[
+    { name:'헤파필터', filterType:'HEPA', maintenanceType:'both', cleaningCycle:30, replacementCycle:365, referenceDailyUsage:1, usageUnit:'h/day', replacementCost:35000, importance:3 } ]},
+  'Dehumidifier':   { label:'제습기', group:'Air', filters:[
+    { name:'에어필터', filterType:'Pre', maintenanceType:'cleaning', cleaningCycle:14, replacementCycle:null, referenceDailyUsage:8, usageUnit:'h/day', replacementCost:0, importance:2 } ]},
+  'Dryer':          { label:'건조기', group:'Cleaning', filters:[
+    { name:'먼지필터', filterType:'Lint', maintenanceType:'cleaning', cleaningCycle:7, replacementCycle:null, referenceDailyUsage:2, usageUnit:'h/day', replacementCost:0, importance:3 } ]},
+  'Range Hood':     { label:'주방 후드', group:'Kitchen', filters:[
+    { name:'기름망 필터', filterType:'Grease', maintenanceType:'cleaning', cleaningCycle:30, replacementCycle:null, referenceDailyUsage:2, usageUnit:'h/day', replacementCost:0, importance:3 } ]},
+  'Water Purifier': { label:'정수기', group:'Water', filters:[
+    { name:'침전 필터', filterType:'Sediment', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:120, referenceDailyUsage:8, usageUnit:'L/day', replacementCost:18000, importance:5 },
+    { name:'카본 필터', filterType:'Carbon', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:365, referenceDailyUsage:8, usageUnit:'L/day', replacementCost:32000, importance:5 } ]},
+  'Car':            { label:'차량', group:'Car', filters:[
+    { name:'캐빈 필터', filterType:'Cabin', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:180, referenceDailyUsage:40, usageUnit:'km/day', replacementCost:15000, importance:3 } ]},
+  'Electric Shaver':{ label:'전기면도기', group:'Personal', filters:[
+    { name:'면도날·망', filterType:'Blade', maintenanceType:'both', cleaningCycle:7, replacementCycle:365, referenceDailyUsage:1, usageUnit:'uses/day', replacementCost:45000, importance:3 } ]},
+  'Manual Razor':   { label:'수동 면도기', group:'Personal', filters:[
+    { name:'면도날 카트리지', filterType:'Blade', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:7, referenceDailyUsage:1, usageUnit:'uses/day', replacementCost:4000, importance:2 } ]},
+  'Electric Toothbrush':{ label:'전동칫솔', group:'Personal', filters:[
+    { name:'칫솔모', filterType:'BrushHead', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:90, referenceDailyUsage:2, usageUnit:'uses/day', replacementCost:6000, importance:4 } ]},
+  'Shower Head':    { label:'샤워기', group:'Personal', filters:[
+    { name:'샤워기 필터', filterType:'Sediment', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:60, referenceDailyUsage:2, usageUnit:'uses/day', replacementCost:8000, importance:2 } ]},
+  'Custom':         { label:'사용자 정의', group:'Custom', filters:[
+    { name:'사용자 소모품', filterType:'Other', maintenanceType:'cleaning', cleaningCycle:30, replacementCycle:null, referenceDailyUsage:8, usageUnit:'h/day', replacementCost:0, importance:3 } ]}
+};
+const DEVICE_TYPES = Object.keys(TEMPLATES);
+const typeLabel = cat => (TEMPLATES[cat] || TEMPLATES.Custom).label;
+const GROUPS = ['Air','Water','Kitchen','Car','Cleaning','Personal','Custom'];
+const GROUP_LABEL = { Air:'공기', Water:'정수', Kitchen:'주방', Car:'차량', Cleaning:'청소·세탁', Personal:'욕실·개인', Custom:'사용자 정의' };
+const groupOf = cat => (TEMPLATES[cat] || TEMPLATES.Custom).group;
+const FILTER_TYPES = ['Pre','HEPA','Deodorizing','Carbon','Sediment','Grease','Lint','Cabin','Blade','BrushHead','Other'];
+const FT_LABEL = { Pre:'프리', HEPA:'헤파', Deodorizing:'탈취', Carbon:'카본', Sediment:'침전', Grease:'기름망', Lint:'먼지', Cabin:'캐빈', Blade:'면도날', BrushHead:'칫솔모', Other:'기타' };
+const ENV_LEVELS = ['low','normal','high','severe'];
+const ENV_LABEL = { low:'낮음', normal:'보통', high:'높음', severe:'매우 높음' };
+const ENV_DESC = { low:'오염·마모가 적은 조건', normal:'일반 가정 · 개인용품 기본값', high:'반려동물·미세먼지·습기 많음', severe:'주방 기름·작업공간 등 가혹 조건' };
+const UNITS = ['h/day','L/day','km/day','uses/day'];
+const UNIT_LABEL = { 'h/day':'시간/일', 'L/day':'L/일', 'km/day':'km/일', 'uses/day':'회/일' };
+const unitLabel = u => UNIT_LABEL[u] || u || '';
+const MT_LABEL = { cleaning:'청소만', replacement:'교체만', both:'청소 + 교체' };
+const STATUSES = ['normal','soon','due','overdue'];
+const RANK = { nodata:-1, normal:0, soon:1, due:2, overdue:3 };
+const ST_LABEL = { normal:'정상', soon:'임박', due:'도래', overdue:'초과', nodata:'날짜 없음' };
+const KIND_KO = { cleaning:'청소', replacement:'교체' };
+
+/* English → Korean for data saved by the earlier English version */
+const NAME_KO = { 'Pre Filter':'프리필터', 'HEPA Filter':'헤파필터', 'Deodorizing Filter':'탈취필터', 'Air Filter':'에어필터', 'Lint Filter':'먼지필터',
+  'Grease Filter':'기름망 필터', 'Sediment Filter':'침전 필터', 'Carbon Filter':'카본 필터', 'Cabin Filter':'캐빈 필터', 'Custom Filter':'사용자 소모품' };
+const LOC_KO = { 'Living Room':'거실', 'Bedroom':'안방', 'Utility Room':'다용도실', 'Laundry Room':'세탁실', 'Kitchen':'주방', 'Parking':'주차장' };
+const MAN_KO = { 'Samsung':'삼성', 'Dyson':'다이슨', 'Winix':'위닉스', 'Coway':'코웨이', 'Hyundai':'현대' };
+const NOTE_KO = { 'Used spare stock':'여분 재고 사용' };
+
+const DEFAULT_SETTINGS = {
+  envFactors: { low:0.90, normal:1.00, high:1.20, severe:1.40 },
+  ufMin: 0.7, ufMax: 1.5,
+  notifyBefore: 7,        // 임박(SOON) 기준 (일)
+  dueWindow: 1,           // 도래(DUE) 기준 (일, 오늘 포함)
+  purchaseLead: 30,       // 재고 0일 때 '곧 구매' 기준 (일)
+  weights: { urgency:0.65, usage:0.10, env:0.05, importance:0.20 }   // 사용·환경은 이미 보정주기에 반영 → 낮은 가중치로 이중 반영 완화
+};
+
+/* =========================================================
+   2. Storage (LocalStorage, guarded)
+   ========================================================= */
+let storageOK = true;
+function storageTest(){ try { localStorage.setItem(KEY + '.t', '1'); localStorage.removeItem(KEY + '.t'); return true; } catch(e){ return false; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); storageOK = true; } catch(e){ storageOK = false; } }
+function normalize(s){
+  const st = { devices:[], filters:[], history:[], meta:{}, ...s };
+  st.settings = { ...DEFAULT_SETTINGS, ...(s.settings || {}) };
+  st.settings.envFactors = { ...DEFAULT_SETTINGS.envFactors, ...((s.settings || {}).envFactors || {}) };
+  st.settings.weights = { ...DEFAULT_SETTINGS.weights, ...((s.settings || {}).weights || {}) };
+  st.meta = st.meta || {};
+  if (!st.meta.ko){
+    st.filters.forEach(f => { if (NAME_KO[f.name]) f.name = NAME_KO[f.name]; });
+    st.devices.forEach(d => { if (LOC_KO[d.location]) d.location = LOC_KO[d.location]; if (MAN_KO[d.manufacturer]) d.manufacturer = MAN_KO[d.manufacturer]; });
+    st.history.forEach(h => { if (NOTE_KO[h.note]) h.note = NOTE_KO[h.note]; });
+    st.meta.ko = true;
+  }
+  if (st.meta.sample && !st.meta.personal){
+    const ago = n => addDays(TODAY, -n);
+    const d1 = nid(st.devices), d2 = d1 + 1, f1 = nid(st.filters), f2 = f1 + 1, h0 = nid(st.history);
+    st.devices.push({ id:d1, name:'전기면도기', category:'Electric Shaver', location:'욕실', manufacturer:'', model:'', memo:'' },
+                    { id:d2, name:'전동칫솔', category:'Electric Toothbrush', location:'욕실', manufacturer:'', model:'', memo:'' });
+    st.filters.push({ id:f1, deviceId:d1, name:'면도날·망', filterType:'Blade', maintenanceType:'both', cleaningCycle:7, replacementCycle:365, lastCleaning:ago(5), lastReplacement:ago(250), dailyUsage:1, referenceDailyUsage:1, usageUnit:'uses/day', environment:'normal', replacementCost:45000, stock:0, importance:3, memo:'' },
+                    { id:f2, deviceId:d2, name:'칫솔모', filterType:'BrushHead', maintenanceType:'replacement', cleaningCycle:null, replacementCycle:90, lastCleaning:null, lastReplacement:ago(84), dailyUsage:2, referenceDailyUsage:2, usageUnit:'uses/day', environment:'normal', replacementCost:6000, stock:2, importance:4, memo:'' });
+    st.history.push({ id:h0, filterId:f1, type:'cleaning', date:ago(5), note:'' }, { id:h0 + 1, filterId:f1, type:'replacement', date:ago(250), note:'' },
+                    { id:h0 + 2, filterId:f2, type:'replacement', date:ago(84), note:'여분 재고 사용' });
+  }
+  st.meta.personal = true;
+  return st;
+}
+function validShape(s){ return s && Array.isArray(s.devices) && Array.isArray(s.filters) && Array.isArray(s.history); }
+function load(){
+  storageOK = storageTest();
+  if (storageOK){
+    try { const raw = localStorage.getItem(KEY); if (raw){ const s = JSON.parse(raw); if (validShape(s)) return normalize(s); } } catch(e){ /* fall through to sample */ }
+  }
+  return seedState();
+}
+const nid = arr => arr.reduce((m, x) => Math.max(m, +x.id || 0), 0) + 1;
+
+/* sample data: dates are relative to the day the sample is created */
+function seedState(){
+  const ago = n => addDays(TODAY, -n);
+  const devices = [
+    { id:1, name:'거실 공기청정기', category:'Air Purifier',   location:'거실',     manufacturer:'삼성',   model:'', memo:'' },
+    { id:2, name:'거실 에어컨',     category:'Air Conditioner', location:'거실',     manufacturer:'LG',     model:'', memo:'' },
+    { id:3, name:'안방 에어컨',     category:'Air Conditioner', location:'안방',     manufacturer:'LG',     model:'', memo:'' },
+    { id:4, name:'무선 청소기',     category:'Vacuum Cleaner',  location:'다용도실', manufacturer:'다이슨', model:'', memo:'반려묘 있음' },
+    { id:5, name:'제습기',          category:'Dehumidifier',    location:'세탁실',   manufacturer:'위닉스', model:'', memo:'' },
+    { id:6, name:'건조기',          category:'Dryer',           location:'세탁실',   manufacturer:'삼성',   model:'', memo:'' },
+    { id:7, name:'주방 후드',       category:'Range Hood',      location:'주방',     manufacturer:'',       model:'', memo:'' },
+    { id:8, name:'정수기',          category:'Water Purifier',  location:'주방',     manufacturer:'코웨이', model:'', memo:'' },
+    { id:9, name:'자동차',          category:'Car',             location:'주차장',   manufacturer:'현대',   model:'', memo:'' },
+    { id:10, name:'전기면도기',     category:'Electric Shaver', location:'욕실',     manufacturer:'',       model:'', memo:'' },
+    { id:11, name:'전동칫솔',       category:'Electric Toothbrush', location:'욕실', manufacturer:'',       model:'', memo:'' }
+  ];
+  const F = (o) => ({ cleaningCycle:null, replacementCycle:null, lastCleaning:null, lastReplacement:null, replacementCost:0, stock:0, importance:3, memo:'', usageUnit:'h/day', ...o });
+  const filters = [
+    F({ id:1,  deviceId:1, name:'프리필터',    filterType:'Pre',         maintenanceType:'cleaning',    cleaningCycle:14,  lastCleaning:ago(4),     dailyUsage:14, referenceDailyUsage:8, environment:'high' }),
+    F({ id:2,  deviceId:1, name:'헤파필터',    filterType:'HEPA',        maintenanceType:'replacement', replacementCycle:180, lastReplacement:ago(89), dailyUsage:14, referenceDailyUsage:8, environment:'high', replacementCost:38000, stock:0, importance:4 }),
+    F({ id:3,  deviceId:1, name:'탈취필터',    filterType:'Deodorizing', maintenanceType:'replacement', replacementCycle:180, lastReplacement:ago(89), dailyUsage:14, referenceDailyUsage:8, environment:'high', replacementCost:25000, stock:1 }),
+    F({ id:4,  deviceId:2, name:'프리필터',    filterType:'Pre',         maintenanceType:'cleaning',    cleaningCycle:14,  lastCleaning:ago(5),     dailyUsage:8,  referenceDailyUsage:8, environment:'normal' }),
+    F({ id:5,  deviceId:3, name:'프리필터',    filterType:'Pre',         maintenanceType:'cleaning',    cleaningCycle:14,  lastCleaning:ago(30),    dailyUsage:10, referenceDailyUsage:8, environment:'normal', importance:4 }),
+    F({ id:6,  deviceId:4, name:'헤파필터',    filterType:'HEPA',        maintenanceType:'both',        cleaningCycle:30, replacementCycle:365, lastCleaning:ago(20), lastReplacement:ago(301), dailyUsage:1, referenceDailyUsage:1, environment:'high', replacementCost:35000, stock:0 }),
+    F({ id:7,  deviceId:5, name:'에어필터',    filterType:'Pre',         maintenanceType:'cleaning',    cleaningCycle:14,  lastCleaning:ago(10),    dailyUsage:6,  referenceDailyUsage:8, environment:'normal', importance:2 }),
+    F({ id:8,  deviceId:6, name:'먼지필터',    filterType:'Lint',        maintenanceType:'cleaning',    cleaningCycle:7,   lastCleaning:ago(6),     dailyUsage:2,  referenceDailyUsage:2, environment:'normal' }),
+    F({ id:9,  deviceId:7, name:'기름망 필터', filterType:'Grease',      maintenanceType:'cleaning',    cleaningCycle:30,  lastCleaning:ago(25),    dailyUsage:2,  referenceDailyUsage:2, environment:'severe' }),
+    F({ id:10, deviceId:8, name:'침전 필터',   filterType:'Sediment',    maintenanceType:'replacement', replacementCycle:120, lastReplacement:ago(60),  dailyUsage:8, referenceDailyUsage:8, usageUnit:'L/day', environment:'normal', replacementCost:18000, stock:2, importance:5 }),
+    F({ id:11, deviceId:8, name:'카본 필터',   filterType:'Carbon',      maintenanceType:'replacement', replacementCycle:365, lastReplacement:ago(200), dailyUsage:8, referenceDailyUsage:8, usageUnit:'L/day', environment:'normal', replacementCost:32000, stock:1, importance:5 }),
+    F({ id:12, deviceId:9, name:'캐빈 필터',   filterType:'Cabin',       maintenanceType:'replacement', replacementCycle:180, lastReplacement:ago(99),  dailyUsage:50, referenceDailyUsage:40, usageUnit:'km/day', environment:'high', replacementCost:15000, stock:0 }),
+    F({ id:13, deviceId:10, name:'면도날·망',  filterType:'Blade',       maintenanceType:'both',        cleaningCycle:7, replacementCycle:365, lastCleaning:ago(5), lastReplacement:ago(250), dailyUsage:1, referenceDailyUsage:1, usageUnit:'uses/day', environment:'normal', replacementCost:45000, stock:0 }),
+    F({ id:14, deviceId:11, name:'칫솔모',     filterType:'BrushHead',   maintenanceType:'replacement', replacementCycle:90, lastReplacement:ago(84), dailyUsage:2, referenceDailyUsage:2, usageUnit:'uses/day', environment:'normal', replacementCost:6000, stock:2, importance:4 })
+  ];
+  const h = []; let id = 1;
+  const push = (filterId, type, date, note='') => h.push({ id:id++, filterId, type, date, note });
+  push(1,'cleaning',ago(4)); push(1,'cleaning',ago(13)); push(1,'cleaning',ago(22));
+  push(2,'replacement',ago(89),'여분 재고 사용'); push(3,'replacement',ago(89));
+  push(4,'cleaning',ago(5)); push(4,'cleaning',ago(19));
+  push(5,'cleaning',ago(30)); push(5,'cleaning',ago(47));
+  push(6,'cleaning',ago(20)); push(6,'cleaning',ago(46)); push(6,'replacement',ago(301));
+  push(7,'cleaning',ago(10)); push(8,'cleaning',ago(6)); push(8,'cleaning',ago(13));
+  push(9,'cleaning',ago(25)); push(10,'replacement',ago(60)); push(11,'replacement',ago(200)); push(12,'replacement',ago(99),'정비소 교체');
+  push(13,'cleaning',ago(5)); push(13,'cleaning',ago(12)); push(13,'replacement',ago(250)); push(14,'replacement',ago(84),'여분 재고 사용');
+  return normalize({ devices, filters, history:h, settings:DEFAULT_SETTINGS, meta:{ sample:true, created:TODAY, ko:true, personal:true } });
+}
+
+let state = load();
+
+/* =========================================================
+   3. Calculations (PRD §42)
+   ========================================================= */
+const hasCleaning    = f => (f.maintenanceType === 'cleaning' || f.maintenanceType === 'both') && +f.cleaningCycle > 0;
+const hasReplacement = f => (f.maintenanceType === 'replacement' || f.maintenanceType === 'both') && +f.replacementCycle > 0;
+
+function calculateElapsedDays(last, today = TODAY){ return last ? diffDays(last, today) : null; }
+function calculateUsageFactor(f, S = state.settings){
+  const act = Number(f.dailyUsage), ref = Number(f.referenceDailyUsage);
+  if (!(ref > 0) || !(act >= 0)) return { raw:1, value:1, clamped:false };
+  const raw = act / ref, value = clamp(raw, S.ufMin, S.ufMax);
+  return { raw, value, clamped: Math.abs(raw - value) > 1e-9 };
+}
+function calculateEnvironmentFactor(env, S = state.settings){ const v = Number(S.envFactors[env]); return v > 0 ? v : 1; }
+function calculateAdjustedCycle(base, uf, ef){ return base / (uf * ef); }
+function calculateRemainingDays(adjDays, elapsed){ return adjDays - elapsed; }
+function calculateLifePercentage(elapsed, adjDays){ return elapsed / adjDays * 100; }
+function getStatusFromRemaining(rem, S = state.settings){
+  if (rem < 0) return 'overdue';
+  if (rem <= S.dueWindow) return 'due';
+  if (rem <= S.notifyBefore) return 'soon';
+  return 'normal';
+}
+/* cleaning reference date: a freshly replaced filter counts as clean */
+function cleaningRef(f){
+  const a = f.lastCleaning, b = hasReplacement(f) ? f.lastReplacement : null;
+  if (a && b) return a > b ? a : b;
+  return a || b || null;
+}
+function taskInfo(f, kind){
+  const S = state.settings;
+  const base = Number(kind === 'cleaning' ? f.cleaningCycle : f.replacementCycle);
+  const uf = calculateUsageFactor(f, S), ef = calculateEnvironmentFactor(f.environment, S);
+  const adjusted = calculateAdjustedCycle(base, uf.value, ef);
+  const adjDays = Math.max(1, Math.round(adjusted));
+  const last = kind === 'cleaning' ? cleaningRef(f) : f.lastReplacement;
+  const t = { kind, base, uf, ef, adjusted, adjDays, last, f };
+  if (!last){ return { ...t, status:'nodata', elapsed:null, remaining:null, life:0, next:null }; }
+  const elapsed = calculateElapsedDays(last);
+  const remaining = calculateRemainingDays(adjDays, elapsed);
+  const life = calculateLifePercentage(elapsed, adjDays);
+  return { ...t, elapsed, remaining, life, next:addDays(last, adjDays), status:getStatusFromRemaining(remaining, S) };
+}
+const calculateNextCleaningDate = f => hasCleaning(f) ? taskInfo(f, 'cleaning').next : null;
+const calculateNextReplacementDate = f => hasReplacement(f) ? taskInfo(f, 'replacement').next : null;
+
+const norm100 = (v, a, b) => b > a ? clamp((v - a) / (b - a) * 100, 0, 100) : 50;
+function calculatePriorityScore(f, tasks){
+  const S = state.settings, W = S.weights;
+  const wsum = (W.urgency + W.usage + W.env + W.importance) || 1;
+  const efs = Object.values(S.envFactors).map(Number);
+  const usage = norm100(calculateUsageFactor(f, S).value, S.ufMin, S.ufMax);
+  const env = norm100(calculateEnvironmentFactor(f.environment, S), Math.min(...efs), Math.max(...efs));
+  const importance = clamp(((Number(f.importance) || 3) - 1) / 4 * 100, 0, 100);
+  const urgency = tasks.length ? clamp(Math.max(...tasks.map(t => t.life)), 0, 100) : 0;
+  const score = (W.urgency * urgency + W.usage * usage + W.env * env + W.importance * importance) / wsum;
+  return { score, urgency, usage, env, importance };
+}
+function getStockStatus(f, rp){
+  const S = state.settings;
+  if (!rp) return { code:'na' };
+  if ((Number(f.stock) || 0) > 0) return { code:'ok' };
+  if (rp.status === 'nodata') return { code:'none' };
+  if (rp.remaining <= S.notifyBefore) return { code:'required', label:'구매 필요' };
+  if (rp.remaining <= S.purchaseLead) return { code:'buysoon', label:'곧 구매' };
+  return { code:'none' };
+}
+function getFilterStatus(tasks){
+  const ok = tasks.filter(t => t.status !== 'nodata');
+  if (!ok.length) return 'nodata';
+  return ok.reduce((a, t) => RANK[t.status] > RANK[a] ? t.status : a, 'normal');
+}
+
+/* one pass model per render */
+let M = null;
+function buildModel(){
+  const devById = new Map(state.devices.map(d => [d.id, d]));
+  const rows = state.filters.map(f => {
+    const dev = devById.get(f.deviceId) || { id:0, name:'(장비 없음)', category:'Custom', location:'' };
+    const tasks = [];
+    if (hasCleaning(f)) tasks.push(taskInfo(f, 'cleaning'));
+    if (hasReplacement(f)) tasks.push(taskInfo(f, 'replacement'));
+    const withData = tasks.filter(t => t.status !== 'nodata');
+    const rp = tasks.find(t => t.kind === 'replacement');
+    const gov = withData.reduce((a, t) => (!a || t.life > a.life) ? t : a, null);
+    return { f, dev, tasks, cl:tasks.find(t => t.kind === 'cleaning'), rp, status:getFilterStatus(tasks), gov,
+             prio:calculatePriorityScore(f, withData), stock:getStockStatus(f, rp), group:groupOf(dev.category) };
+  });
+  rows.sort((a, b) => b.prio.score - a.prio.score || (b.gov?.life || 0) - (a.gov?.life || 0));
+  const tasks = rows.flatMap(r => r.tasks.filter(t => t.status !== 'nodata').map(t => ({ r, t })));
+  return { rows, tasks };
+}
+
+/* recurring projection of tasks; overdue tasks are placed on today */
+function projectEvents(from, to, kinds = ['cleaning','replacement']){
+  const out = [];
+  for (const { r, t } of M.tasks){
+    if (!kinds.includes(t.kind)) continue;
+    let d = t.next < TODAY ? TODAY : t.next, overdue = t.next < TODAY, guard = 0;
+    while (d <= to && guard++ < 1000){
+      if (d >= from) out.push({ date:d, r, t, kind:t.kind, overdue, cost: t.kind === 'replacement' ? (Number(r.f.replacementCost) || 0) : 0 });
+      d = addDays(d, t.adjDays); overdue = false;
+    }
+  }
+  return out.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : b.r.prio.score - a.r.prio.score);
+}
+function calculateUpcomingCost(from, to){ return projectEvents(from, to, ['replacement']).reduce((s, e) => s + e.cost, 0); }
+
+/* =========================================================
+   4. Small render helpers
+   ========================================================= */
+function pleats(pct, status, thin){
+  const n = 20, on = clamp(Math.round(pct / 100 * n), 0, n);
+  let s = ''; for (let i = 0; i < n; i++) s += `<i${i < on ? ' class="on"' : ''}></i>`;
+  return `<span class="pleats${thin ? ' thin' : ''} st-${status}" role="img" aria-label="사용 수명 ${Math.round(pct)}%">${s}</span>`;
+}
+const pill = (status, text) => `<span class="pill st-${status}">${esc(text ?? ST_LABEL[status])}</span>`;
+function dday(rem){
+  if (rem == null) return '—';
+  if (rem > 0) return 'D-' + rem;
+  if (rem === 0) return '오늘';
+  return '+' + (-rem) + '일';
+}
+const ddSpan = t => t && t.status !== 'nodata' ? `<span class="dd st-${t.status}">${dday(t.remaining)}</span>` : (t ? '<span class="muted">날짜 없음</span>' : '<span class="muted">—</span>');
+function taskText(t){
+  const k = KIND_KO[t.kind];
+  if (t.remaining < 0) return `${k}주기 ${-t.remaining}일 초과`;
+  if (t.remaining === 0) return `오늘 ${k} 예정`;
+  return `${t.remaining}일 후 ${k} 예정`;
+}
+const fullName = r => `${r.dev.name} · ${r.f.name}`;
+function stockBadge(r){
+  if (r.stock.code === 'required') return pill('overdue', r.stock.label);
+  if (r.stock.code === 'buysoon') return pill('soon', r.stock.label);
+  return '';
+}
+const doneBtn = (kind, id) => `<button class="btn sm ${kind === 'cleaning' ? 'act-clean' : 'act-repl'}" type="button" data-act="${kind === 'cleaning' ? 'cleaned' : 'replaced'}" data-id="${id}">${kind === 'cleaning' ? '청소 완료' : '교체 완료'}</button>`;
+function actionBtns(r){
+  const id = r.f.id;
+  return `<button class="btn sm act-clean" type="button" data-act="cleaned" data-id="${id}" ${r.cl ? '' : 'disabled'} title="오늘 청소 완료로 기록">청소 완료</button>`
+       + `<button class="btn sm act-repl" type="button" data-act="replaced" data-id="${id}" ${r.rp ? '' : 'disabled'} title="오늘 교체 완료로 기록 (재고 1개 차감)">교체 완료</button>`
+       + `<button class="btn sm" type="button" data-act="stock" data-id="${id}" title="여분 재고 1개 추가">재고 +1</button>`
+       + `<button class="btn sm ghost" type="button" data-act="edit-filter" data-id="${id}">수정</button>`;
+}
+
+/* ---------- charts (inline SVG, colors from tokens) ---------- */
+function niceMax(v, integer){
+  if (!(v > 0)) return integer ? 4 : 1;
+  const e = Math.pow(10, Math.floor(Math.log10(v))), f = v / e;
+  let m = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e;
+  if (integer) m = Math.max(4, Math.ceil(m / 4) * 4);
+  return m;
+}
+function fmtAxis(v){ return v >= 10000 ? (v / 10000).toLocaleString('ko-KR') + '만' : v.toLocaleString('ko-KR'); }
+function barChart(data, { fmt = v => v, integer = false, ariaLabel = '' } = {}){
+  const W = 340, H = 190, pl = 44, pr = 8, pt = 22, pb = 28;
+  const iw = W - pl - pr, ih = H - pt - pb;
+  const max = niceMax(Math.max(...data.map(d => d.value), 0), integer);
+  const band = iw / data.length, bw = Math.min(42, band * 0.56);
+  let g = '';
+  for (let i = 0; i <= 4; i++){
+    const v = max * i / 4, y = pt + ih - ih * i / 4;
+    g += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" style="stroke:var(--line);stroke-width:1${i ? ';stroke-dasharray:2 3' : ''}"></line>`;
+    g += `<text x="${pl - 8}" y="${y + 3}" text-anchor="end" style="fill:var(--muted);font:10px var(--f-mono)">${esc(integer ? v : fmtAxis(v))}</text>`;
+  }
+  data.forEach((d, i) => {
+    const h = max ? d.value / max * ih : 0, x = pl + band * i + (band - bw) / 2, y = pt + ih - h;
+    const col = d.color || 'var(--bar)';
+    if (h > 0){
+      const r = Math.min(4, h / 2, bw / 2);
+      g += `<path class="hit" data-tip="${esc(d.tip || (d.label + ': ' + fmt(d.value)))}" d="M${x},${pt + ih} V${y + r} Q${x},${y} ${x + r},${y} H${x + bw - r} Q${x + bw},${y} ${x + bw},${y + r} V${pt + ih} Z" style="fill:${col}"></path>`;
+    } else {
+      g += `<rect class="hit" data-tip="${esc(d.tip || (d.label + ': ' + fmt(d.value)))}" x="${x}" y="${pt + ih - 2}" width="${bw}" height="2" style="fill:var(--line-2)"></rect>`;
+    }
+    g += `<text x="${x + bw / 2}" y="${y - 6}" text-anchor="middle" style="fill:var(--ink);font:500 10.5px var(--f-mono)">${esc(fmt(d.value))}</text>`;
+    g += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle" style="fill:var(--ink-2);font:11px var(--f-label)">${esc(d.label)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(ariaLabel)}">${g}</svg>`;
+}
+function donut(items){
+  const total = items.reduce((s, d) => s + d.value, 0);
+  const R = 60, SW = 18, C = 2 * Math.PI * R, GAP = total > 1 ? 2 : 0;
+  let off = 0, segs = '';
+  if (!total){ segs = `<circle cx="80" cy="80" r="${R}" style="fill:none;stroke:var(--pleat-off);stroke-width:${SW}"></circle>`; }
+  items.forEach(d => {
+    if (!d.value) return;
+    const len = d.value / total * C, dash = Math.max(len - GAP, 0.5);
+    segs += `<circle class="hit" data-tip="${esc(d.label + ': ' + d.value + '개 (' + Math.round(d.value / total * 100) + '%)')}" cx="80" cy="80" r="${R}" transform="rotate(-90 80 80)" style="fill:none;stroke:${d.color};stroke-width:${SW};stroke-dasharray:${dash} ${C - dash};stroke-dashoffset:${-off}"></circle>`;
+    off += len;
+  });
+  return `<svg viewBox="0 0 160 160" role="img" aria-label="소모품 상태 분포">${segs}
+    <text x="80" y="80" text-anchor="middle" style="fill:var(--ink);font:600 30px var(--f-display)">${total}</text>
+    <text x="80" y="99" text-anchor="middle" style="fill:var(--muted);font:600 11px var(--f-label)">소모품</text></svg>`;
+}
+
+/* =========================================================
+   5. Views
+   ========================================================= */
+const ui = { view:'dashboard', q:'', st:'all', cat:'all', cal:TODAY.slice(0, 7), hist:'all', summary:null };
+
+const VIEWS = {
+  dashboard:  { title:'대시보드',  sub:'가장 먼저 관리해야 할 소모품과 전체 상태', html:viewDashboard, after:afterTable },
+  devices:    { title:'장비',      sub:'장비별 소모품 구성과 청소·교체 상태', html:viewDevices },
+  filters:    { title:'소모품',      sub:'소모품별 보정주기와 우선순위 점수 계산 내역', html:viewFilters },
+  maintenance:{ title:'관리 일정', sub:'예정 작업, 재고, 예상 유지관리비', html:viewMaintenance },
+  calendar:   { title:'캘린더',    sub:'월별 청소·교체 일정 (보정주기로 반복 계산)', html:viewCalendar },
+  history:    { title:'관리 이력', sub:'청소·교체 기록', html:viewHistory },
+  settings:   { title:'설정',      sub:'보정계수, 알림 기준, 우선순위 가중치, 데이터 관리', html:viewSettings }
+};
+
+function renderNav(){
+  const over = M.tasks.filter(x => x.t.remaining < 0).length;
+  const attn = M.rows.filter(r => ['soon','due','overdue'].includes(r.status)).length;
+  const items = [
+    ['dashboard','대시보드', attn ? `<span class="badge st-due">${attn}</span>` : ''],
+    ['devices','장비', `<span class="badge">${state.devices.length}</span>`],
+    ['filters','소모품', `<span class="badge">${state.filters.length}</span>`],
+    ['maintenance','관리 일정', over ? `<span class="badge st-overdue">${over}</span>` : ''],
+    ['calendar','캘린더',''],
+    ['history','관리 이력', `<span class="badge">${state.history.length}</span>`],
+    ['settings','설정','']
+  ];
+  $('#nav').innerHTML = items.map(([k, l, b]) => `<button type="button" data-act="nav" data-view="${k}" ${ui.view === k ? 'aria-current="page"' : ''}><span>${l}</span>${b}</button>`).join('');
+  $('#side-foot').innerHTML = `<div>오늘 <b>${dotDate(TODAY)}</b></div>
+    <div><span class="dot ${storageOK ? 'st-good' : 'st-overdue'}"></span>${storageOK ? '브라우저에 자동 저장 중' : '저장 불가 · 새로고침 시 초기화'}</div>`;
+}
+
+function render(){
+  TODAY = localToday();
+  M = buildModel();
+  renderNav();
+  const v = VIEWS[ui.view] || VIEWS.dashboard;
+  $('#view-title').innerHTML = esc(v.title) + (state.meta.sample ? '<span class="sample-chip" title="설정에서 비울 수 있습니다">예시 데이터</span>' : '');
+  $('#view-sub').textContent = v.sub;
+  $('#view').innerHTML = v.html();
+  v.after && v.after();
+}
+
+/* ---------- Dashboard ---------- */
+function viewDashboard(){
+  const S = state.settings;
+  const rows = M.rows;
+  if (!rows.length) return emptyState();
+  const attn = rows.filter(r => ['soon','due','overdue'].includes(r.status));
+  const overdueF = rows.filter(r => r.status === 'overdue');
+  const ym = TODAY.slice(0, 7);
+  const monthCost = calculateUpcomingCost(TODAY, monthEnd(ym));
+  const next30Cost = calculateUpcomingCost(TODAY, addDays(TODAY, 30));
+  const tasks = M.tasks;
+  const nOver = tasks.filter(x => x.t.remaining < 0).length;
+  const n7 = tasks.filter(x => x.t.remaining >= 0 && x.t.remaining <= 7).length;
+  const n30 = tasks.filter(x => x.t.remaining >= 0 && x.t.remaining <= 30).length;
+
+  const kpi = `<div class="kpis">
+    <div class="kpi"><span class="lbl">전체 소모품</span><span class="val">${rows.length}</span><span class="sub">장비 ${state.devices.length}대</span></div>
+    <div class="kpi"><span class="lbl">관리 필요</span><span class="val ${attn.length ? 'warn' : ''}">${attn.length}</span><span class="sub">임박 · 도래 · 초과 소모품</span></div>
+    <div class="kpi"><span class="lbl">주기 초과</span><span class="val ${overdueF.length ? 'bad' : ''}">${overdueF.length}</span><span class="sub">관리주기가 지난 소모품</span></div>
+    <div class="kpi"><span class="lbl">이번 달 교체비</span><span class="val">${won(monthCost)}</span><span class="sub">다음 30일 ${won(next30Cost)}</span></div>
+  </div>`;
+
+  const att = tasks.filter(x => x.t.remaining <= S.notifyBefore).sort((a, b) => a.t.remaining - b.t.remaining || b.r.prio.score - a.r.prio.score);
+  const attRows = att.slice(0, 7).map(({ r, t }) => `<div class="att-row">
+      ${pill(t.status, t.status === 'overdue' ? '긴급' : ST_LABEL[t.status])}
+      <div class="what"><b>${esc(fullName(r))}</b><span>${taskText(t)} · 보정주기 ${t.adjDays}일</span></div>
+      <span class="dd st-${t.status}">${dday(t.remaining)}</span>
+      ${doneBtn(t.kind, r.f.id)}
+    </div>`).join('');
+  const attPanel = `<div class="panel">
+    <div class="panel-h"><span class="eyebrow">관리가 필요한 작업</span><span class="note">알림 기준 ${S.notifyBefore}일 이내 · ${att.length}건</span></div>
+    <div class="att">${attRows || '<div class="empty">알림 기준 안에 든 작업이 없습니다.</div>'}</div>
+    ${att.length > 7 ? `<div style="margin-top:10px"><button class="btn sm ghost" type="button" data-act="nav" data-view="maintenance">나머지 ${att.length - 7}건 보기</button></div>` : ''}
+  </div>`;
+
+  const top = rows.slice(0, 5);
+  const prioPanel = `<div class="panel">
+    <div class="panel-h"><span class="eyebrow">관리 우선순위</span><span class="note">0–100점</span></div>
+    <ol class="prio-list">${top.map(r => `<li class="st-${r.status}"><div><div class="nm">${esc(fullName(r))}</div><div class="track"><i style="width:${r.prio.score.toFixed(1)}%"></i></div></div><span class="sc">${Math.round(r.prio.score)}</span></li>`).join('')}</ol>
+    <div class="counts">
+      <div><span class="lbl">7일 이내</span><span class="v">${n7}<small>건</small></span></div>
+      <div><span class="lbl">30일 이내</span><span class="v">${n30}<small>건</small></span></div>
+      <div><span class="lbl">주기 초과</span><span class="v" style="color:${nOver ? 'var(--st-over)' : 'inherit'}">${nOver}<small>건</small></span></div>
+    </div>
+  </div>`;
+
+  const counts = { normal:0, soon:0, due:0, overdue:0, nodata:0 };
+  rows.forEach(r => counts[r.status]++);
+  const dItems = [
+    { label:ST_LABEL.normal, value:counts.normal, color:'var(--st-normal)', cls:'normal' },
+    { label:ST_LABEL.soon, value:counts.soon, color:'var(--st-soon)', cls:'soon' },
+    { label:ST_LABEL.due, value:counts.due, color:'var(--st-due)', cls:'due' },
+    { label:ST_LABEL.overdue, value:counts.overdue, color:'var(--st-over)', cls:'overdue' }
+  ];
+  if (counts.nodata) dItems.push({ label:ST_LABEL.nodata, value:counts.nodata, color:'var(--muted)', cls:'nodata' });
+  const statusChart = `<div class="panel chart">
+    <div class="panel-h"><span class="eyebrow">소모품 상태</span></div>
+    <div class="donut-wrap">${donut(dItems)}
+      <ul class="legend">${dItems.map(d => `<li class="st-${d.cls}"><span class="sw"></span><span>${d.label}</span><span class="n">${d.value}</span></li>`).join('')}</ul>
+    </div>
+    <div class="cap">소모품별로 가장 급한 작업(청소/교체) 기준</div>
+  </div>`;
+
+  const b = [
+    { label:'초과', value:nOver, color:'var(--st-over)' },
+    { label:'0–7일', value:n7 },
+    { label:'8–14일', value:tasks.filter(x => x.t.remaining >= 8 && x.t.remaining <= 14).length },
+    { label:'15–30일', value:tasks.filter(x => x.t.remaining >= 15 && x.t.remaining <= 30).length }
+  ].map(d => ({ ...d, tip:`${d.label}: ${d.value}건` }));
+  const upChart = `<div class="panel chart">
+    <div class="panel-h"><span class="eyebrow">다가오는 작업</span><span class="note">작업 수</span></div>
+    ${barChart(b, { integer:true, ariaLabel:'기간별 예정 작업 수' })}
+    <div class="cap">청소·교체 작업을 남은 일수로 구분</div>
+  </div>`;
+
+  const months = Array.from({ length:6 }, (_, k) => addMonths(ym, k));
+  const cd = months.map(m => {
+    const from = m === ym ? TODAY : m + '-01';
+    const ev = projectEvents(from, monthEnd(m), ['replacement']);
+    const v = ev.reduce((s, e) => s + e.cost, 0);
+    const [yy, mo] = m.split('-').map(Number);
+    return { label:mo + '월', value:v, tip:`${yy}년 ${mo}월 예상 교체비 ${won(v)}\n${ev.length ? ev.map(e => '· ' + fullName(e.r) + ' ' + won(e.cost)).join('\n') : '교체 예정 없음'}` };
+  });
+  const costChart = `<div class="panel chart">
+    <div class="panel-h"><span class="eyebrow">예상 교체비</span><span class="note">향후 6개월</span></div>
+    ${barChart(cd, { fmt:v => v ? wonShort(v) : '0', ariaLabel:'월별 예상 교체비' })}
+    <div class="cap">향후 12개월 합계 ${won(calculateUpcomingCost(TODAY, addDays(TODAY, 364)))} · 보유 재고는 차감하지 않음</div>
+  </div>`;
+
+  const stockRows = M.rows.filter(r => r.stock.code === 'required' || r.stock.code === 'buysoon')
+    .sort((a, b) => a.rp.remaining - b.rp.remaining);
+  const stockPanel = `<div class="panel">
+    <div class="panel-h"><span class="eyebrow">재고 부족 경고</span><span class="note">재고 0 + 교체 임박</span></div>
+    <div class="att wide">${stockRows.map(r => `<div class="att-row">
+        ${stockBadge(r)}
+        <div class="what"><b>${esc(fullName(r))}</b><span>재고 ${r.f.stock}개 · 교체비 ${won(r.f.replacementCost)}</span></div>
+        <span class="dd st-${r.rp.status}">${dday(r.rp.remaining)}</span>
+        <button class="btn sm" type="button" data-act="stock" data-id="${r.f.id}">재고 +1</button>
+      </div>`).join('') || '<div class="empty">재고 부족 경고가 없습니다.</div>'}</div>
+  </div>`;
+  const summaryPanel = `<div class="panel">
+    <div class="panel-h"><span class="eyebrow">관리 요약</span>
+      <button class="btn sm" type="button" data-act="summary">${ui.summary ? '다시 만들기' : '요약 만들기'}</button></div>
+    <div class="summary" id="summary">${ui.summary || '<p class="muted">버튼을 누르면 이번 주 우선 작업, 미뤄도 되는 작업, 비용, 다음 달 일정, 재고 부족 항목을 문장으로 정리합니다. 현재 버전은 규칙 기반 요약이며 AI API는 연결되어 있지 않습니다.</p>'}</div>
+  </div>`;
+
+  return `<div class="stack">
+    ${kpi}
+    <div class="grid-2">${attPanel}${prioPanel}</div>
+    <div class="grid-3">${statusChart}${upChart}${costChart}</div>
+    <div class="grid-2">${summaryPanel}${stockPanel}</div>
+    ${tablePanel()}
+  </div>`;
+}
+
+function emptyState(){
+  return `<div class="panel" style="padding:36px 24px;display:grid;gap:14px;justify-items:start;max-width:640px">
+    <span class="eyebrow">등록된 소모품이 없습니다</span>
+    <h2 style="font-size:20px;font-weight:700">장비를 등록하고 소모품을 추가하세요</h2>
+    <p class="ink2" style="margin:0">장비 유형을 고르면 템플릿에 있는 기본 소모품을 함께 만들 수 있습니다. 관리주기와 마지막 관리일은 등록 후 수정하세요.</p>
+    <div class="actions"><button class="btn primary" type="button" data-act="add-device">+ 장비 추가</button>
+    <button class="btn" type="button" data-act="reset-sample">예시 데이터 불러오기</button></div>
+  </div>`;
+}
+
+/* ---------- filter table (Dashboard) ---------- */
+function tablePanel(){
+  const stChips = ['all', ...STATUSES].map(s => `<button type="button" class="chip" data-act="f-st" data-v="${s}" aria-pressed="${ui.st === s}">${s === 'all' ? '전체 상태' : ST_LABEL[s]}</button>`).join('');
+  const catChips = ['all', ...GROUPS].map(g => `<button type="button" class="chip" data-act="f-cat" data-v="${g}" aria-pressed="${ui.cat === g}">${g === 'all' ? '전체 분류' : GROUP_LABEL[g]}</button>`).join('');
+  return `<div class="panel">
+    <div class="panel-h"><span class="eyebrow">전체 소모품</span><span class="note">우선순위 높은 순</span></div>
+    <div class="toolbar">
+      <input class="search" id="q" type="search" placeholder="장비 또는 소모품 검색" value="${esc(ui.q)}" aria-label="장비 또는 소모품 검색">
+      <div class="chips" role="group" aria-label="상태 선택">${stChips}</div>
+      <div class="chips" role="group" aria-label="분류 선택">${catChips}</div>
+    </div>
+    <div class="tbl-wrap" id="tbl-host"></div>
+  </div>`;
+}
+function filteredRows(){
+  const q = ui.q.trim().toLowerCase();
+  return M.rows.filter(r =>
+    (ui.st === 'all' || r.status === ui.st) &&
+    (ui.cat === 'all' || r.group === ui.cat) &&
+    (!q || [r.dev.name, r.f.name, FT_LABEL[r.f.filterType], r.dev.location, typeLabel(r.dev.category), r.dev.manufacturer].join(' ').toLowerCase().includes(q)));
+}
+function tableHTML(){
+  const rows = filteredRows();
+  if (!rows.length) return '<div class="empty">조건에 맞는 소모품이 없습니다.</div>';
+  return `<table class="tbl"><thead><tr>
+    <th>장비</th><th>소모품</th><th>청소</th><th>교체</th><th>상태</th><th>사용 수명</th><th>우선순위</th><th class="r">교체비</th><th>재고</th><th>작업</th>
+  </tr></thead><tbody>${rows.map(r => `<tr>
+    <td><b style="font-weight:500">${esc(r.dev.name)}</b><small>${esc(r.dev.location || typeLabel(r.dev.category))}</small></td>
+    <td>${esc(r.f.name)}<small>${esc(MT_LABEL[r.f.maintenanceType])}</small></td>
+    <td>${ddSpan(r.cl)}${r.cl && r.cl.next ? `<small>${mmdd(r.cl.next)} · ${r.cl.adjDays}일 주기</small>` : ''}</td>
+    <td>${ddSpan(r.rp)}${r.rp && r.rp.next ? `<small>${mmdd(r.rp.next)} · ${r.rp.adjDays}일 주기</small>` : ''}</td>
+    <td>${pill(r.status)}</td>
+    <td class="life">${r.gov ? pleats(r.gov.life, r.gov.status, true) + `<small>${Math.round(r.gov.life)}% · ${KIND_KO[r.gov.kind]} 기준</small>` : '<span class="muted">—</span>'}</td>
+    <td><div class="pscore"><b>${Math.round(r.prio.score)}</b><div class="track"><i style="width:${r.prio.score.toFixed(1)}%"></i></div></div></td>
+    <td class="r mono">${r.rp ? won(r.f.replacementCost) : '<span class="muted">—</span>'}</td>
+    <td><span class="mono">${r.rp ? r.f.stock : '—'}</span> ${stockBadge(r)}</td>
+    <td><div class="acts">${actionBtns(r)}</div></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+function afterTable(){ const h = $('#tbl-host'); if (h) h.innerHTML = tableHTML(); }
+
+/* ---------- Devices ---------- */
+function viewDevices(){
+  if (!state.devices.length) return emptyState();
+  const byDev = new Map(); M.rows.forEach(r => { if (!byDev.has(r.f.deviceId)) byDev.set(r.f.deviceId, []); byDev.get(r.f.deviceId).push(r); });
+  const devs = [...state.devices].sort((a, b) => (a.location || '').localeCompare(b.location || '', 'ko') || a.name.localeCompare(b.name, 'ko'));
+  return `<div class="dev-grid">${devs.map(d => {
+    const rs = (byDev.get(d.id) || []).sort((a, b) => a.f.id - b.f.id);
+    const worst = rs.reduce((a, r) => RANK[r.status] > RANK[a] ? r.status : a, 'normal');
+    return `<article class="panel dev">
+      <div class="dev-h">
+        <div class="top"><span class="eyebrow">${esc(d.location || '위치 없음')}</span>${rs.length ? pill(worst) : ''}</div>
+        <h3>${esc(d.name)}</h3>
+        <div class="meta">${esc(typeLabel(d.category))}${d.manufacturer ? ' · ' + esc(d.manufacturer) : ''}${d.model ? ' ' + esc(d.model) : ''}${d.memo ? ' · ' + esc(d.memo) : ''}</div>
+      </div>
+      ${rs.map(r => `<div class="dev-f">
+        <div class="fh"><b>${esc(r.f.name)}</b><span class="muted" style="font-size:12px">우선순위 <span class="mono">${Math.round(r.prio.score)}</span></span></div>
+        ${r.tasks.map(t => `<div class="task"><span class="k">${KIND_KO[t.kind]}</span>${ddSpan(t)}${t.status !== 'nodata' ? pleats(t.life, t.status) : '<span class="muted">마지막 관리일 없음</span>'}</div>`).join('')}
+        ${r.rp ? `<div class="stockline">재고 <b class="mono">${r.f.stock}</b>개 · 교체비 ${won(r.f.replacementCost)} ${stockBadge(r)}</div>` : ''}
+        <div class="acts">${actionBtns(r)}</div>
+      </div>`).join('') || '<div class="dev-f"><span class="muted">등록된 소모품이 없습니다.</span></div>'}
+      <div class="dev-foot">
+        <button class="btn sm" type="button" data-act="add-filter" data-device="${d.id}">+ 소모품 추가</button>
+        <button class="btn sm ghost" type="button" data-act="edit-device" data-id="${d.id}">장비 수정</button>
+      </div>
+    </article>`; }).join('')}</div>`;
+}
+
+/* ---------- Filters (calculation sheet) ---------- */
+function viewFilters(){
+  if (!M.rows.length) return emptyState();
+  const S = state.settings, W = S.weights, ws = (W.urgency + W.usage + W.env + W.importance) || 1;
+  const pct = w => Math.round(w / ws * 100) + '%';
+  return `<div class="stack">
+  <div class="panel method">
+    <b>보정주기 = 기본주기 ÷ (사용계수 × 환경계수)</b>, 일 단위로 반올림합니다.
+    사용계수 = 실사용량 ÷ 기준사용량 (${S.ufMin}–${S.ufMax} 범위로 제한).
+    우선순위 = 긴급도 ${pct(W.urgency)} + 사용강도 ${pct(W.usage)} + 환경위험 ${pct(W.env)} + 중요도 ${pct(W.importance)}.
+    보정주기는 관리 보조값이며 제조사 공식 기준을 대체하지 않습니다.
+  </div>
+  ${M.rows.map(r => {
+    const f = r.f;
+    return `<section class="panel sheet">
+      <div class="sheet-h"><h3>${esc(f.name)}<span>${esc(r.dev.name)} · ${esc(MT_LABEL[f.maintenanceType])}</span></h3>
+        <div class="actions">${pill(r.status)}<span class="pill st-nodata">우선순위 ${Math.round(r.prio.score)}</span></div></div>
+      <div class="sheet-body">
+        ${r.tasks.map(t => calcBlock(t, f)).join('')}
+        <div class="calc">
+          <span class="eyebrow">우선순위 점수</span>
+          <div class="pparts">
+            ${[['긴급도', r.prio.urgency, W.urgency], ['사용강도', r.prio.usage, W.usage], ['환경위험', r.prio.env, W.env], ['중요도', r.prio.importance, W.importance]]
+              .map(([k, v, w]) => `<div><span>${k} ×${pct(w)}</span><div class="track"><i style="width:${v.toFixed(1)}%"></i></div><b>${Math.round(v)}</b></div>`).join('')}
+          </div>
+          <div class="formula">가중합 = <b>${r.prio.score.toFixed(1)}</b> / 100<br>중요도 ${f.importance}/5 · 환경 ${ENV_LABEL[f.environment] || f.environment} · 사용량 ${f.dailyUsage}/${f.referenceDailyUsage} ${esc(unitLabel(f.usageUnit))}</div>
+        </div>
+      </div>
+      <div class="acts" style="display:flex;gap:6px;flex-wrap:wrap">${actionBtns(r)}</div>
+    </section>`; }).join('')}
+  </div>`;
+}
+function calcBlock(t, f){
+  return `<div class="calc st-${t.status}">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="eyebrow">${KIND_KO[t.kind]}</span>${ddSpan(t)}</div>
+    <dl>
+      <dt>기본주기</dt><dd>${t.base}일</dd>
+      <dt>사용계수</dt><dd>${t.uf.raw.toFixed(2)}${t.uf.clamped ? ' → ' + t.uf.value.toFixed(2) + ' (제한)' : ''}</dd>
+      <dt>환경계수</dt><dd>${t.ef.toFixed(2)} (${esc(ENV_LABEL[f.environment] || f.environment)})</dd>
+      <dt>보정주기</dt><dd><b>${t.adjDays}일</b></dd>
+      <dt>${t.kind === 'cleaning' ? '기준일' : '마지막 교체일'}</dt><dd>${dotDate(t.last)}</dd>
+      <dt>경과</dt><dd>${t.elapsed ?? '—'}일</dd>
+      <dt>남은 기간</dt><dd>${t.remaining ?? '—'}일</dd>
+      <dt>사용 수명</dt><dd>${t.status !== 'nodata' ? t.life.toFixed(1) + '%' : '—'}</dd>
+      <dt>다음 ${KIND_KO[t.kind]}일</dt><dd>${dotDate(t.next)}</dd>
+    </dl>
+    ${t.status !== 'nodata' ? `<div style="margin-top:10px">${pleats(t.life, t.status)}</div>` : ''}
+    <div class="formula">${t.base} ÷ (${t.uf.value.toFixed(2)} × ${t.ef.toFixed(2)}) = ${t.adjusted.toFixed(1)} → ${t.adjDays}일${t.kind === 'cleaning' && f.lastReplacement && t.last === f.lastReplacement && hasReplacement(f) ? '<br>기준일 = 최근 교체일 (교체 후 청소 기록 없음)' : ''}</div>
+  </div>`;
+}
+
+/* ---------- Maintenance ---------- */
+function viewMaintenance(){
+  const S = state.settings;
+  const tasks = [...M.tasks].sort((a, b) => a.t.remaining - b.t.remaining);
+  const buckets = [
+    ['주기 초과', x => x.t.remaining < 0, 'overdue'],
+    ['7일 이내', x => x.t.remaining >= 0 && x.t.remaining <= 7, 'soon'],
+    ['8–30일', x => x.t.remaining > 7 && x.t.remaining <= 30, 'normal'],
+    ['30일 이후', x => x.t.remaining > 30, 'nodata']
+  ];
+  const list = buckets.map(([title, fn, cls]) => {
+    const xs = tasks.filter(fn);
+    return `<div class="bucket"><h4><span class="dot st-${cls}"></span>${title} · ${xs.length}건</h4>
+      <div class="att">${xs.map(({ r, t }) => `<div class="att-row">
+        ${pill(t.status, KIND_KO[t.kind])}
+        <div class="what"><b>${esc(fullName(r))}</b><span>${taskText(t)} · 예정일 ${dotDate(t.next)} · 우선순위 ${Math.round(r.prio.score)}</span></div>
+        <span class="dd st-${t.status}">${dday(t.remaining)}</span>
+        ${doneBtn(t.kind, r.f.id)}
+      </div>`).join('') || '<div class="empty">없음</div>'}</div></div>`;
+  }).join('');
+
+  const inv = M.rows.filter(r => r.rp).sort((a, b) => (a.rp.remaining ?? 1e9) - (b.rp.remaining ?? 1e9));
+  const invTable = `<div class="tbl-wrap"><table class="tbl" style="min-width:560px"><thead><tr><th>소모품</th><th>다음 교체</th><th class="r">재고</th><th class="r">교체비</th><th>경고</th><th></th></tr></thead><tbody>
+    ${inv.map(r => `<tr><td>${esc(fullName(r))}</td><td>${ddSpan(r.rp)}<small>${dotDate(r.rp.next)}</small></td><td class="r mono">${r.f.stock}</td><td class="r mono">${won(r.f.replacementCost)}</td><td>${stockBadge(r) || (r.stock.code === 'ok' ? pill('good', '재고 있음') : '<span class="muted">—</span>')}</td>
+      <td><button class="btn sm" type="button" data-act="stock" data-id="${r.f.id}">재고 +1</button></td></tr>`).join('')}
+  </tbody></table></div>`;
+
+  const ym = TODAY.slice(0, 7);
+  const months = Array.from({ length:12 }, (_, k) => addMonths(ym, k));
+  let annual = 0;
+  const costRows = months.map(m => {
+    const ev = projectEvents(m === ym ? TODAY : m + '-01', monthEnd(m), ['replacement']);
+    const v = ev.reduce((s, e) => s + e.cost, 0); annual += v;
+    const [yy, mo] = m.split('-').map(Number);
+    return `<tr><td class="mono">${yy}.${pad(mo)}</td><td class="wrap">${ev.map(e => esc(fullName(e.r))).join(', ') || '<span class="muted">—</span>'}</td><td class="r mono">${won(v)}</td></tr>`;
+  }).join('');
+
+  return `<div class="stack">
+    <div class="grid-2">
+      <div class="panel"><div class="panel-h"><span class="eyebrow">예정된 작업</span><span class="note">알림 기준 ${S.notifyBefore}일</span></div>${list}</div>
+      <div class="stack">
+        <div class="panel"><div class="panel-h"><span class="eyebrow">여분 소모품 재고</span><span class="note">재고 0이면서 ${S.notifyBefore}일 이내 → 구매 필요 · ${S.purchaseLead}일 이내 → 곧 구매</span></div>${invTable}</div>
+        <div class="panel"><div class="panel-h"><span class="eyebrow">연간 예상 교체비</span><span class="note">향후 12개월 · 보유 재고는 차감하지 않음</span></div>
+          <div class="kpi" style="padding:0 0 12px"><span class="val">${won(annual)}</span></div>
+          <div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>월</th><th>교체 예정</th><th class="r">금액</th></tr></thead><tbody>${costRows}</tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Calendar ---------- */
+function viewCalendar(){
+  const ym = ui.cal, [y, m] = ym.split('-').map(Number);
+  const first = ym + '-01', last = monthEnd(ym);
+  const startDow = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  const gridStart = addDays(first, -startDow);
+  const weeks = Math.ceil((startDow + diffDays(first, last) + 1) / 7);
+  const gridEnd = addDays(gridStart, weeks * 7 - 1);
+  const future = TODAY <= gridEnd ? projectEvents(gridStart < TODAY ? TODAY : gridStart, gridEnd) : [];
+  const fById = new Map(M.rows.map(r => [r.f.id, r]));
+  const done = state.history.filter(h => h.date >= gridStart && h.date <= gridEnd && h.date <= TODAY && fById.has(h.filterId));
+  const byDay = {};
+  future.forEach(e => (byDay[e.date] ||= []).push({ type:'plan', e }));
+  done.forEach(h => (byDay[h.date] ||= []).push({ type:'done', h }));
+  let cells = ['일','월','화','수','목','금','토'].map(d => `<div class="wd">${d}</div>`).join('');
+  for (let i = 0; i < weeks * 7; i++){
+    const d = addDays(gridStart, i), items = byDay[d] || [];
+    cells += `<div class="day${d.slice(0, 7) !== ym ? ' out' : ''}${d === TODAY ? ' today' : ''}"><span class="n">${Number(d.slice(8))}</span>
+      ${items.slice(0, 4).map(it => it.type === 'plan'
+        ? `<span class="ev st-${it.e.overdue ? 'overdue' : it.kind === 'cleaning' ? 'normal' : 'good'}" data-tip="${esc(fullName(it.e.r) + '\n' + (it.e.overdue ? '주기 초과 · ' + taskText(it.e.t) : KIND_KO[it.e.kind] + ' 예정') + (it.e.cost ? ' · ' + won(it.e.cost) : ''))}"><span class="t">${KIND_KO[it.e.kind]}</span>${esc(it.e.r.dev.name)}</span>`
+        : `<span class="ev done st-nodata" data-tip="${esc(fullName(fById.get(it.h.filterId)) + '\n' + KIND_KO[it.h.type] + ' 완료')}"><span class="t">완료</span>${esc(fById.get(it.h.filterId).dev.name)}</span>`).join('')}
+      ${items.length > 4 ? `<span class="muted" style="font-size:11px">+${items.length - 4}</span>` : ''}
+    </div>`;
+  }
+  const agenda = projectEvents(first < TODAY ? TODAY : first, last).filter(e => e.date >= first);
+  return `<div class="stack">
+    <div class="panel">
+      <div class="panel-h">
+        <div class="cal-nav"><button class="btn sm" type="button" data-act="cal" data-v="-1" aria-label="이전 달">‹</button><h2>${y}년 ${m}월</h2><button class="btn sm" type="button" data-act="cal" data-v="1" aria-label="다음 달">›</button><button class="btn sm ghost" type="button" data-act="cal" data-v="0">이번 달</button></div>
+        <div class="chips"><span class="pill st-normal">청소</span><span class="pill st-good">교체</span><span class="pill st-overdue">주기 초과</span><span class="pill st-nodata">완료</span></div>
+      </div>
+      <div class="cal-scroll"><div class="cal">${cells}</div></div>
+    </div>
+    <div class="panel"><div class="panel-h"><span class="eyebrow">${m}월 일정</span><span class="note">${agenda.length}건 · 오늘 이후</span></div>
+      <div class="agenda">${agenda.map(e => `<div class="agenda-row"><span class="mono">${dotDate(e.date)}</span>${pill(e.overdue ? 'overdue' : e.kind === 'cleaning' ? 'normal' : 'good', KIND_KO[e.kind])}<span>${esc(fullName(e.r))}${e.overdue ? ' <span class="muted">· ' + taskText(e.t) + '</span>' : ''}</span><span class="mono ink2">${e.cost ? won(e.cost) : ''}</span></div>`).join('') || '<div class="empty">이 달에 남은 일정이 없습니다.</div>'}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- History ---------- */
+function viewHistory(){
+  const fById = new Map(M.rows.map(r => [r.f.id, r]));
+  const hs = state.history.filter(h => fById.has(h.filterId) && (ui.hist === 'all' || h.type === ui.hist))
+    .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
+  const opts = M.rows.map(r => `<option value="${r.f.id}">${esc(fullName(r))}</option>`).join('');
+  return `<div class="stack">
+    <div class="panel">
+      <div class="panel-h"><span class="eyebrow">지난 기록 추가</span><span class="note">입력한 날짜가 현재 마지막 관리일보다 늦으면 마지막 관리일도 바뀝니다</span></div>
+      <form novalidate id="hist-form" class="form-grid" style="align-items:end">
+        <label class="fld" for="h-filter"><span>소모품</span><select id="h-filter">${opts}</select></label>
+        <label class="fld" for="h-type"><span>종류</span><select id="h-type"><option value="cleaning">청소</option><option value="replacement">교체</option></select></label>
+        <label class="fld" for="h-date"><span>날짜</span><input id="h-date" type="date" value="${TODAY}" max="${TODAY}"></label>
+        <label class="fld" for="h-note"><span>메모</span><input id="h-note" type="text" placeholder="선택 입력"></label>
+        <button class="btn primary" type="submit">기록 추가</button>
+      </form>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><span class="eyebrow">관리 이력 · ${hs.length}건</span>
+        <div class="chips">${[['all','전체'],['cleaning','청소'],['replacement','교체']].map(([v, l]) => `<button type="button" class="chip" data-act="f-hist" data-v="${v}" aria-pressed="${ui.hist === v}">${l}</button>`).join('')}</div></div>
+      <div class="tbl-wrap"><table class="tbl" style="min-width:620px"><thead><tr><th>날짜</th><th>장비</th><th>소모품</th><th>종류</th><th>메모</th><th></th></tr></thead><tbody>
+        ${hs.map(h => { const r = fById.get(h.filterId); return `<tr><td class="mono">${dotDate(h.date)}</td><td>${esc(r.dev.name)}</td><td>${esc(r.f.name)}</td><td>${pill(h.type === 'cleaning' ? 'normal' : 'good', KIND_KO[h.type])}</td><td class="ink2 wrap">${esc(h.note)}</td>
+          <td class="r"><button class="btn sm ghost" type="button" data-act="hist-del" data-id="${h.id}">삭제</button></td></tr>`; }).join('') || '<tr><td colspan="6" class="muted">기록이 없습니다.</td></tr>'}
+      </tbody></table></div>
+      <p class="muted" style="font-size:12px;margin:12px 0 0">이력을 삭제해도 소모품의 마지막 관리일은 바뀌지 않습니다. 날짜를 되돌리려면 소모품 수정 화면에서 직접 바꾸세요.</p>
+    </div>
+  </div>`;
+}
+
+/* ---------- Settings ---------- */
+function viewSettings(){
+  const S = state.settings, W = S.weights, ws = (W.urgency + W.usage + W.env + W.importance) || 1;
+  const n = (id, v, min) => `<input id="${id}" type="number" step="any" min="${min}" value="${v}" data-setting>`;
+  return `<div class="stack">
+    <div class="grid-2e">
+      <div class="panel"><div class="panel-h"><span class="eyebrow">알림 기준</span></div>
+        <div class="form-grid">
+          <label class="fld" for="s-notify"><span>미리 알림</span><select id="s-notify" data-setting>${[7,14,30].map(d => `<option value="${d}" ${S.notifyBefore === d ? 'selected' : ''}>${d}일 전</option>`).join('')}</select><small>남은 일수가 이 값 이하이면 '임박'</small></label>
+          <label class="fld" for="s-due"><span>도래 기준 (일)</span>${n('s-due', S.dueWindow, 0)}<small>0 ≤ 남은 일수 ≤ 이 값이면 '도래'</small></label>
+          <label class="fld" for="s-lead"><span>구매 준비 기간 (일)</span>${n('s-lead', S.purchaseLead, 0)}<small>재고 0일 때 '곧 구매' 표시 기준</small></label>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-h"><span class="eyebrow">사용계수 제한</span></div>
+        <div class="form-grid">
+          <label class="fld" for="s-ufmin"><span>최솟값</span>${n('s-ufmin', S.ufMin, 0.1)}</label>
+          <label class="fld" for="s-ufmax"><span>최댓값</span>${n('s-ufmax', S.ufMax, 0.1)}</label>
+        </div>
+        <p class="muted" style="font-size:12px;margin:10px 0 0">사용계수(실사용량 ÷ 기준사용량)를 이 범위로 제한해 과도한 보정을 막습니다.</p>
+      </div>
+    </div>
+    <div class="grid-2e">
+      <div class="panel"><div class="panel-h"><span class="eyebrow">환경계수</span></div>
+        <div class="form-grid">${ENV_LEVELS.map(l => `<label class="fld" for="s-env-${l}"><span>${ENV_LABEL[l]}</span>${n('s-env-' + l, S.envFactors[l], 0.1)}<small>${ENV_DESC[l]}</small></label>`).join('')}</div>
+      </div>
+      <div class="panel"><div class="panel-h"><span class="eyebrow">우선순위 가중치</span><span class="note">합계로 나눠 비율로 적용</span></div>
+        <div class="form-grid">${[['urgency','긴급도'],['usage','사용강도'],['env','환경위험'],['importance','중요도']].map(([k, l]) => `<label class="fld" for="s-w-${k}"><span>${l}</span>${n('s-w-' + k, W[k], 0)}<small>${Math.round(W[k] / ws * 100)}%</small></label>`).join('')}</div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-h"><span class="eyebrow">데이터</span><span class="note">${storageOK ? '이 브라우저에 자동 저장됩니다' : '브라우저 저장소를 사용할 수 없어 새로고침 시 초기화됩니다'}</span></div>
+      <div class="actions" style="margin-bottom:12px">
+        <button class="btn" type="button" data-act="csv-dl">CSV 내려받기</button>
+        <button class="btn" type="button" data-act="csv-copy">CSV 복사</button>
+        <button class="btn" type="button" data-act="json-dl">백업 파일 내려받기</button>
+        <button class="btn" type="button" data-act="json-copy">백업 복사</button>
+      </div>
+      <label class="fld" for="import-json"><span>백업 가져오기</span><textarea id="import-json" placeholder='백업 JSON을 붙여넣으세요 {"devices":[...],"filters":[...],"history":[...]}'></textarea></label>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn" type="button" data-act="json-import">가져오기</button>
+        <button class="btn ghost" type="button" data-act="reset-sample">예시 데이터 불러오기</button>
+        <button class="btn danger" type="button" data-act="clear-all">모든 데이터 삭제</button>
+      </div>
+    </div>
+    <div class="panel method"><div class="panel-h"><span class="eyebrow">계산 방법</span></div>
+      <ul>
+        <li><code>사용계수 = 실사용량 ÷ 기준사용량</code>, ${S.ufMin}–${S.ufMax} 범위로 제한합니다. 두 값은 같은 단위(시간/일, L/일, km/일)여야 합니다.</li>
+        <li><code>보정주기 = 기본주기 ÷ (사용계수 × 환경계수)</code>, 일 단위로 반올림해 날짜 계산에 씁니다.</li>
+        <li><code>남은 기간 = 보정주기 − 경과일</code>, <code>사용 수명(%) = 경과일 ÷ 보정주기 × 100</code></li>
+        <li>청소 기준일은 마지막 청소일과 마지막 교체일 중 늦은 날짜입니다. 새 소모품은 청소된 상태로 봅니다.</li>
+        <li>상태: 남은 일수 &lt; 0이면 초과, 0–${S.dueWindow}일이면 도래, ${S.dueWindow + 1}–${S.notifyBefore}일이면 임박, 그 외는 정상입니다. 소모품 상태는 청소·교체 중 더 급한 쪽을 따릅니다.</li>
+        <li><code>우선순위 = Σ(가중치 × 점수) ÷ Σ가중치</code>. 긴급도 = 사용 수명(최대 100), 사용강도 = (사용계수 − 최솟값) ÷ (최댓값 − 최솟값) × 100, 환경위험 = (환경계수 − 최저) ÷ (최고 − 최저) × 100, 중요도 = (중요도 − 1) ÷ 4 × 100.</li>
+        <li>예상 교체비는 다음 교체일부터 보정주기 간격으로 반복 계산해 더합니다. 이미 지난 교체는 오늘 발생한 것으로 보고, 보유 재고는 차감하지 않습니다.</li>
+        <li>보정주기는 관리 보조값이며 제조사 공식 기준을 대체하지 않습니다. 템플릿 주기는 예시 기본값이므로 제품 설명서에 맞게 수정하세요.</li>
+      </ul>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   6. Summary (rule-based text; AI API optional per PRD §36)
+   ========================================================= */
+function buildSummary(){
+  const S = state.settings;
+  const tasks = [...M.tasks];
+  const over = tasks.filter(x => x.t.remaining < 0).sort((a, b) => b.r.prio.score - a.r.prio.score);
+  const week = tasks.filter(x => x.t.remaining >= 0 && x.t.remaining <= 7).sort((a, b) => a.t.remaining - b.t.remaining);
+  const p = [];
+  if (over.length || week.length){
+    const first = [...over, ...week].slice(0, 3).map(x => `<b>${esc(fullName(x.r))}</b>(${KIND_KO[x.t.kind]})`).join(', ');
+    let s = `이번 주에는 ${first}을(를) 우선 관리해야 합니다.`;
+    over.slice(0, 3).forEach(x => { s += ` ${esc(fullName(x.r))}는 설정된 ${KIND_KO[x.t.kind]}주기를 ${-x.t.remaining}일 초과했습니다.`; });
+    week.slice(0, 3).forEach(x => { s += ` ${esc(fullName(x.r))}는 ${x.t.remaining === 0 ? '오늘' : x.t.remaining + '일 후'} ${KIND_KO[x.t.kind]} 예정입니다.`; });
+    p.push(`<p><span class="tag">이번 주</span>${s}</p>`);
+  } else p.push(`<p><span class="tag">이번 주</span>7일 안에 예정된 작업과 주기를 넘긴 작업이 없습니다.</p>`);
+
+  const defer = tasks.filter(x => x.t.remaining >= 0 && x.t.remaining <= S.notifyBefore && x.r.prio.score < 50)
+    .sort((a, b) => a.r.prio.score - b.r.prio.score).slice(0, 3);
+  if (defer.length) p.push(`<p><span class="tag">미룰 수 있음</span>${defer.map(x => `${esc(fullName(x.r))}(${KIND_KO[x.t.kind]}, ${dday(x.t.remaining)})`).join(', ')}는 우선순위 점수가 50점 미만(${defer.map(x => Math.round(x.r.prio.score)).join(', ')}점)이라 다른 작업 뒤로 미룰 수 있는 후보입니다. 주기를 넘기기 전에는 처리하는 것을 권장합니다.</p>`);
+
+  const ym = TODAY.slice(0, 7), nextYm = addMonths(ym, 1);
+  const mCost = calculateUpcomingCost(TODAY, monthEnd(ym));
+  const nCost = calculateUpcomingCost(nextYm + '-01', monthEnd(nextYm));
+  const yEv = projectEvents(TODAY, addDays(TODAY, 364), ['replacement']);
+  const yCost = yEv.reduce((s, e) => s + e.cost, 0);
+  const byF = {}; yEv.forEach(e => { byF[fullName(e.r)] = (byF[fullName(e.r)] || 0) + e.cost; });
+  const topF = Object.entries(byF).sort((a, b) => b[1] - a[1])[0];
+  p.push(`<p><span class="tag">비용</span>이번 달 남은 예상 교체비는 ${won(mCost)}, 다음 달은 ${won(nCost)}입니다. 향후 12개월 예상 교체비는 ${won(yCost)}이며${topF ? `, 가장 큰 항목은 ${esc(topF[0])}(${won(topF[1])})입니다` : ''}.</p>`);
+
+  const nEv = projectEvents(nextYm + '-01', monthEnd(nextYm));
+  const nc = nEv.filter(e => e.kind === 'cleaning').length, nr = nEv.filter(e => e.kind === 'replacement').length;
+  p.push(`<p><span class="tag">다음 달</span>${Number(nextYm.slice(5))}월에는 청소 ${nc}건, 교체 ${nr}건이 예정되어 있습니다${nr ? ` (교체: ${[...new Set(nEv.filter(e => e.kind === 'replacement').map(e => esc(fullName(e.r))))].join(', ')})` : ''}.</p>`);
+
+  const req = M.rows.filter(r => r.stock.code === 'required'), soon = M.rows.filter(r => r.stock.code === 'buysoon');
+  if (req.length || soon.length){
+    p.push(`<p><span class="tag">재고</span>${req.length ? `재고가 없고 교체가 ${S.notifyBefore}일 이내인 ${req.map(r => `${esc(fullName(r))}(${dday(r.rp.remaining)})`).join(', ')}는 바로 구매가 필요합니다. ` : ''}${soon.length ? `${soon.map(r => `${esc(fullName(r))}(${dday(r.rp.remaining)})`).join(', ')}는 ${S.purchaseLead}일 안에 교체 예정이라 미리 구매해 두는 것이 좋습니다.` : ''}</p>`);
+  } else p.push(`<p><span class="tag">재고</span>재고 부족 경고가 없습니다.</p>`);
+  p.push(`<p class="muted" style="font-size:12px">${dotDate(TODAY)} 기준 · 규칙 기반 자동 요약</p>`);
+  return p.join('');
+}
+
+/* =========================================================
+   7. Modals & forms
+   ========================================================= */
+let confirmFn = null;
+function openModal(title, html, narrow){
+  $('#modal-title').textContent = title;
+  $('#modal-content').innerHTML = html;
+  $('#modal-card').classList.toggle('narrow', !!narrow);
+  $('#modal').hidden = false;
+  const first = $('#modal-content input:not([type=hidden]),#modal-content select,#modal-content button');
+  first && first.focus();
+}
+function closeModal(){ $('#modal').hidden = true; $('#modal-content').innerHTML = ''; confirmFn = null; }
+function openConfirm(title, msg, okLabel, fn){
+  confirmFn = fn;
+  openModal(title, `<div class="modal-b"><p style="margin:0">${msg}</p></div>
+    <div class="modal-f"><div class="right"><button class="btn" type="button" data-act="modal-close">취소</button><button class="btn danger" type="button" data-act="confirm-ok">${esc(okLabel)}</button></div></div>`, true);
+}
+const fld = (id, label, input, hint = '') => `<label class="fld" for="${id}"><span>${label}</span>${input}${hint ? `<small>${hint}</small>` : ''}</label>`;
+const opt = (v, l, sel) => `<option value="${esc(v)}" ${String(v) === String(sel) ? 'selected' : ''}>${esc(l)}</option>`;
+
+/* device form */
+function openDeviceForm(id){
+  const d = state.devices.find(x => x.id === id) || { name:'', category:'Air Purifier', manufacturer:'', model:'', location:'', memo:'' };
+  const isNew = !id;
+  const nF = isNew ? 0 : state.filters.filter(f => f.deviceId === id).length;
+  openModal(isNew ? '장비 추가' : '장비 수정', `<form novalidate id="device-form" data-id="${id || ''}">
+    <div class="modal-b">
+      <div class="form-grid">
+        ${fld('d-name', '장비 이름 *', `<input id="d-name" type="text" value="${esc(d.name)}" placeholder="예: 거실 공기청정기">`)}
+        ${fld('d-cat', '장비 유형', `<select id="d-cat">${DEVICE_TYPES.map(t => opt(t, TEMPLATES[t].label, d.category)).join('')}</select>`)}
+        ${fld('d-loc', '위치', `<input id="d-loc" type="text" value="${esc(d.location)}" placeholder="예: 거실">`)}
+        ${fld('d-man', '제조사', `<input id="d-man" type="text" value="${esc(d.manufacturer)}">`)}
+        ${fld('d-model', '모델명', `<input id="d-model" type="text" value="${esc(d.model)}">`)}
+      </div>
+      ${fld('d-memo', '메모', `<input id="d-memo" type="text" value="${esc(d.memo)}">`)}
+      ${isNew ? `<label class="check" for="d-tpl"><input id="d-tpl" type="checkbox" checked> 템플릿 기본 소모품 함께 만들기 <span class="muted" id="d-tpl-list"></span></label>` : ''}
+      <div class="err" id="d-err"></div>
+    </div>
+    <div class="modal-f">
+      ${isNew ? '' : `<button class="btn danger" type="button" data-act="del-device" data-id="${id}">장비 삭제${nF ? ` (소모품 ${nF}개 포함)` : ''}</button>`}
+      <div class="right"><button class="btn" type="button" data-act="modal-close">취소</button><button class="btn primary" type="submit">${isNew ? '장비 추가' : '저장'}</button></div>
+    </div></form>`);
+  const upd = () => { const l = $('#d-tpl-list'); if (l) l.textContent = '(' + TEMPLATES[$('#d-cat').value].filters.map(f => f.name).join(', ') + ')'; };
+  $('#d-cat').addEventListener('change', upd); upd();
+}
+function submitDevice(form){
+  const id = Number(form.dataset.id) || 0;
+  const name = $('#d-name').value.trim();
+  if (!name){ $('#d-err').textContent = '장비 이름을 입력하세요.'; return; }
+  const data = { name, category:$('#d-cat').value, location:$('#d-loc').value.trim(), manufacturer:$('#d-man').value.trim(), model:$('#d-model').value.trim(), memo:$('#d-memo').value.trim() };
+  if (id){ Object.assign(state.devices.find(x => x.id === id), data); commit('장비 정보를 저장했습니다.'); }
+  else {
+    const dev = { id:nid(state.devices), ...data }; state.devices.push(dev);
+    let n = 0;
+    if ($('#d-tpl') && $('#d-tpl').checked){
+      TEMPLATES[data.category].filters.forEach(t => {
+        state.filters.push({ id:nid(state.filters), deviceId:dev.id, ...t,
+          lastCleaning:(t.maintenanceType !== 'replacement') ? TODAY : null,
+          lastReplacement:(t.maintenanceType !== 'cleaning') ? TODAY : null,
+          dailyUsage:t.referenceDailyUsage, environment:'normal', stock:0, memo:'' });
+        n++;
+      });
+    }
+    commit(n ? `${name} 장비와 소모품 ${n}개를 추가했습니다. 마지막 관리일은 오늘로 들어갔으니 필요하면 수정하세요.` : `${name} 장비를 추가했습니다.`);
+  }
+  closeModal();
+}
+
+/* filter form */
+function openFilterForm(id, deviceId){
+  if (!state.devices.length){ toast('먼저 장비를 등록하세요.'); openDeviceForm(); return; }
+  const isNew = !id;
+  const f = state.filters.find(x => x.id === id) || { deviceId:deviceId || state.devices[0].id, name:'', filterType:'Pre', maintenanceType:'cleaning', cleaningCycle:14, replacementCycle:'', lastCleaning:TODAY, lastReplacement:'', dailyUsage:8, referenceDailyUsage:8, usageUnit:'h/day', environment:'normal', replacementCost:0, stock:0, importance:3, memo:'' };
+  const tplOpts = DEVICE_TYPES.map(t => `<optgroup label="${esc(TEMPLATES[t].label)}">${TEMPLATES[t].filters.map((x, i) => `<option value="${esc(t)}|${i}">${esc(TEMPLATES[t].label)} · ${esc(x.name)} (${esc(MT_LABEL[x.maintenanceType])})</option>`).join('')}</optgroup>`).join('');
+  const v = x => x == null ? '' : esc(x);
+  openModal(isNew ? '소모품 추가' : '소모품 수정', `<form novalidate id="filter-form" data-id="${id || ''}">
+    <div class="modal-b">
+      ${isNew ? fld('f-tpl', '템플릿', `<select id="f-tpl"><option value="">템플릿 선택 (선택하면 기본값이 채워집니다)</option>${tplOpts}</select>`, '템플릿 주기는 예시 기본값입니다. 제품 설명서 기준으로 수정하세요.') : ''}
+      <fieldset class="fs"><legend>소모품 정보</legend><div class="form-grid">
+        ${fld('f-dev', '장비', `<select id="f-dev">${state.devices.map(d => opt(d.id, d.name, f.deviceId)).join('')}</select>`)}
+        ${fld('f-name', '소모품 이름 *', `<input id="f-name" type="text" value="${v(f.name)}" placeholder="예: 헤파필터, 칫솔모, 면도날">`)}
+        ${fld('f-type', '소모품 종류', `<select id="f-type">${FILTER_TYPES.map(t => opt(t, FT_LABEL[t], f.filterType)).join('')}</select>`)}
+        ${fld('f-mt', '관리 방식', `<select id="f-mt">${Object.keys(MT_LABEL).map(k => opt(k, MT_LABEL[k], f.maintenanceType)).join('')}</select>`)}
+        ${fld('f-imp', '중요도 (1–5)', `<select id="f-imp">${[1,2,3,4,5].map(i => opt(i, i + (i === 5 ? ' · 매우 중요' : i === 1 ? ' · 낮음' : ''), f.importance)).join('')}</select>`)}
+      </div></fieldset>
+      <fieldset class="fs"><legend>주기와 마지막 관리일</legend><div class="form-grid">
+        ${fld('f-cc', '청소 주기 (일)', `<input id="f-cc" type="number" min="1" step="1" value="${v(f.cleaningCycle)}">`)}
+        ${fld('f-lc', '마지막 청소일', `<input id="f-lc" type="date" max="${TODAY}" value="${v(f.lastCleaning)}">`)}
+        ${fld('f-rc', '교체 주기 (일)', `<input id="f-rc" type="number" min="1" step="1" value="${v(f.replacementCycle)}">`)}
+        ${fld('f-lr', '마지막 교체일', `<input id="f-lr" type="date" max="${TODAY}" value="${v(f.lastReplacement)}">`)}
+      </div></fieldset>
+      <fieldset class="fs"><legend>사용량과 환경</legend><div class="form-grid">
+        ${fld('f-du', '실사용량', `<input id="f-du" type="number" min="0" step="any" value="${v(f.dailyUsage)}">`)}
+        ${fld('f-ru', '기준사용량', `<input id="f-ru" type="number" min="0.1" step="any" value="${v(f.referenceDailyUsage)}">`, '기본 주기가 가정한 하루 사용량')}
+        ${fld('f-unit', '단위', `<select id="f-unit">${UNITS.map(u => opt(u, UNIT_LABEL[u], f.usageUnit || 'h/day')).join('')}</select>`)}
+        ${fld('f-env', '사용 환경', `<select id="f-env">${ENV_LEVELS.map(l => opt(l, `${ENV_LABEL[l]} ×${state.settings.envFactors[l]} · ${ENV_DESC[l]}`, f.environment)).join('')}</select>`)}
+      </div></fieldset>
+      <fieldset class="fs"><legend>비용과 재고</legend><div class="form-grid">
+        ${fld('f-cost', '교체비 (원)', `<input id="f-cost" type="number" min="0" step="any" value="${v(f.replacementCost)}">`)}
+        ${fld('f-stock', '여분 재고 (개)', `<input id="f-stock" type="number" min="0" step="1" value="${v(f.stock)}">`)}
+        ${fld('f-memo', '메모', `<input id="f-memo" type="text" value="${v(f.memo)}">`)}
+      </div></fieldset>
+      <div><span class="eyebrow">계산 미리보기</span><div class="preview" id="f-preview" style="margin-top:8px"></div></div>
+      <div class="err" id="f-err"></div>
+    </div>
+    <div class="modal-f">
+      ${isNew ? '' : `<button class="btn danger" type="button" data-act="del-filter" data-id="${id}">소모품 삭제</button>`}
+      <div class="right"><button class="btn" type="button" data-act="modal-close">취소</button><button class="btn primary" type="submit">${isNew ? '소모품 추가' : '저장'}</button></div>
+    </div></form>`);
+  const form = $('#filter-form');
+  form.addEventListener('input', updateFilterPreview);
+  form.addEventListener('change', updateFilterPreview);
+  const tpl = $('#f-tpl');
+  if (tpl){
+    tpl.addEventListener('change', () => {
+      if (!tpl.value) return;
+      const [t, i] = tpl.value.split('|'); const x = TEMPLATES[t].filters[+i];
+      $('#f-name').value = x.name; $('#f-type').value = x.filterType; $('#f-mt').value = x.maintenanceType;
+      $('#f-cc').value = x.cleaningCycle ?? ''; $('#f-rc').value = x.replacementCycle ?? '';
+      $('#f-ru').value = x.referenceDailyUsage; $('#f-du').value = x.referenceDailyUsage; $('#f-unit').value = x.usageUnit;
+      $('#f-cost').value = x.replacementCost; $('#f-imp').value = x.importance;
+      $('#f-lc').value = x.maintenanceType !== 'replacement' ? TODAY : ''; $('#f-lr').value = x.maintenanceType !== 'cleaning' ? TODAY : '';
+      updateFilterPreview();
+    });
+  }
+  updateFilterPreview();
+}
+function readFilterForm(){
+  const num = id => { const s = $('#' + id).value; return s === '' ? null : Number(s); };
+  const dt = id => $('#' + id).value || null;
+  return { deviceId:Number($('#f-dev').value), name:$('#f-name').value.trim(), filterType:$('#f-type').value, maintenanceType:$('#f-mt').value,
+    cleaningCycle:num('f-cc'), replacementCycle:num('f-rc'), lastCleaning:dt('f-lc'), lastReplacement:dt('f-lr'),
+    dailyUsage:num('f-du'), referenceDailyUsage:num('f-ru'), usageUnit:$('#f-unit').value, environment:$('#f-env').value,
+    replacementCost:num('f-cost') || 0, stock:Math.max(0, Math.round(num('f-stock') || 0)), importance:Number($('#f-imp').value), memo:$('#f-memo').value.trim() };
+}
+function validateFilter(f){
+  if (!f.name) return '소모품 이름을 입력하세요.';
+  const c = f.maintenanceType !== 'replacement', r = f.maintenanceType !== 'cleaning';
+  if (c && !(f.cleaningCycle > 0)) return '청소 주기(일)를 1 이상으로 입력하세요.';
+  if (r && !(f.replacementCycle > 0)) return '교체 주기(일)를 1 이상으로 입력하세요.';
+  if (r && !f.lastReplacement) return '마지막 교체일을 입력하세요.';
+  if (c && !f.lastCleaning && !f.lastReplacement) return '마지막 청소일을 입력하세요.';
+  if ((f.lastCleaning && f.lastCleaning > TODAY) || (f.lastReplacement && f.lastReplacement > TODAY)) return '마지막 관리일은 오늘보다 늦을 수 없습니다.';
+  if (!(f.referenceDailyUsage > 0)) return '기준사용량은 0보다 커야 합니다.';
+  if (!(f.dailyUsage >= 0)) return '실사용량을 입력하세요.';
+  return '';
+}
+function updateFilterPreview(){
+  const f = readFilterForm();
+  const c = f.maintenanceType !== 'replacement', r = f.maintenanceType !== 'cleaning';
+  ['f-cc','f-lc'].forEach(id => $('#' + id).disabled = !c);
+  ['f-rc','f-lr','f-cost','f-stock'].forEach(id => $('#' + id).disabled = !r);
+  const tf = { ...f, cleaningCycle:c ? f.cleaningCycle : null, replacementCycle:r ? f.replacementCycle : null };
+  const blocks = [];
+  if (hasCleaning(tf)) blocks.push(taskInfo(tf, 'cleaning'));
+  if (hasReplacement(tf)) blocks.push(taskInfo(tf, 'replacement'));
+  $('#f-preview').innerHTML = blocks.length ? blocks.map(t => `<div class="calc st-${t.status}">
+      <div style="display:flex;justify-content:space-between;gap:8px"><span class="eyebrow">${KIND_KO[t.kind]}</span>${ddSpan(t)}</div>
+      <div class="formula" style="border:0;margin-top:6px;padding:0">${t.base} ÷ (${t.uf.value.toFixed(2)}${t.uf.clamped ? '*' : ''} × ${t.ef.toFixed(2)}) = <b>${t.adjDays}일</b><br>다음 ${KIND_KO[t.kind]}: ${dotDate(t.next)} · ${ST_LABEL[t.status]}${t.uf.clamped ? `<br>* 사용계수 ${t.uf.raw.toFixed(2)} → 제한값 적용` : ''}</div>
+    </div>`).join('') : '<span class="muted">주기를 입력하면 보정주기가 계산됩니다.</span>';
+  $('#f-err').textContent = '';
+}
+function submitFilter(form){
+  const id = Number(form.dataset.id) || 0;
+  const f = readFilterForm();
+  if (f.maintenanceType === 'cleaning'){ f.replacementCycle = null; }
+  if (f.maintenanceType === 'replacement'){ f.cleaningCycle = null; }
+  const err = validateFilter(f);
+  if (err){ $('#f-err').textContent = err; return; }
+  if (id){ Object.assign(state.filters.find(x => x.id === id), f); commit(`${f.name} 설정을 저장했습니다.`); }
+  else { state.filters.push({ id:nid(state.filters), ...f }); commit(`${f.name}을(를) 추가했습니다.`); }
+  closeModal();
+}
+
+/* =========================================================
+   8. State changes, undo, toast
+   ========================================================= */
+let undoSnap = null, toastTimer = null;
+function snapshot(){ undoSnap = JSON.stringify(state); }
+function commit(msg, undoable){ save(); render(); if (msg) toast(msg, undoable); }
+function toast(msg, undoable){
+  const t = $('#toast');
+  t.innerHTML = `<span>${esc(msg)}</span>${undoable && undoSnap ? '<button class="btn sm" type="button" data-act="undo">되돌리기</button>' : ''}`;
+  t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, undoable ? 7000 : 3800);
+}
+function addHistory(filterId, type, date, note = ''){ state.history.push({ id:nid(state.history), filterId, type, date, note }); }
+
+function markCleaned(id){
+  const f = state.filters.find(x => x.id === id); if (!f) return;
+  snapshot(); f.lastCleaning = TODAY; addHistory(id, 'cleaning', TODAY);
+  const next = calculateNextCleaningDate(f);
+  commit(`${f.name} 청소 완료 · 다음 청소 ${dotDate(next)}`, true);
+}
+function markReplaced(id){
+  const f = state.filters.find(x => x.id === id); if (!f) return;
+  snapshot();
+  const used = (Number(f.stock) || 0) > 0;
+  f.lastReplacement = TODAY; if (used) f.stock = Number(f.stock) - 1;
+  addHistory(id, 'replacement', TODAY, used ? '여분 재고 사용' : '');
+  const next = calculateNextReplacementDate(f);
+  commit(`${f.name} 교체 완료${used ? ` · 재고 ${f.stock}개 남음` : ''} · 다음 교체 ${dotDate(next)}`, true);
+}
+function addStock(id){
+  const f = state.filters.find(x => x.id === id); if (!f) return;
+  snapshot(); f.stock = (Number(f.stock) || 0) + 1;
+  commit(`${f.name} 재고 ${f.stock}개`, true);
+}
+
+/* export */
+function csvText(){
+  const q = s => { s = String(s ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const head = ['장비','위치','소모품','관리 방식','청소 기본주기','청소 보정주기','다음 청소일','청소까지 남은 일','교체 기본주기','교체 보정주기','다음 교체일','교체까지 남은 일','상태','사용 수명(%)','우선순위','교체비','재고','재고 경고'];
+  const lines = M.rows.map(r => [r.dev.name, r.dev.location, r.f.name, MT_LABEL[r.f.maintenanceType],
+    r.cl?.base ?? '', r.cl?.adjDays ?? '', r.cl?.next ?? '', r.cl?.remaining ?? '',
+    r.rp?.base ?? '', r.rp?.adjDays ?? '', r.rp?.next ?? '', r.rp?.remaining ?? '',
+    ST_LABEL[r.status], r.gov ? r.gov.life.toFixed(1) : '', r.prio.score.toFixed(1), r.rp ? r.f.replacementCost : '', r.rp ? r.f.stock : '', r.stock.label || ''].map(q).join(','));
+  return [head.join(','), ...lines].join('\n');
+}
+function download(name, text, type){
+  try {
+    const url = URL.createObjectURL(new Blob([type.includes('csv') ? '﻿' + text : text], { type }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 800);
+    toast('내려받기를 시작했습니다. 파일이 받아지지 않으면 복사 버튼을 사용하세요.');
+  } catch(e){ showCopyBox(name, text); }
+}
+function copyText(label, text){
+  const fallback = () => showCopyBox(label, text);
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast(label + ' 내용을 클립보드에 복사했습니다.'), fallback);
+    else fallback();
+  } catch(e){ fallback(); }
+}
+function showCopyBox(label, text){
+  openModal(label, `<div class="modal-b"><p class="muted" style="margin:0">자동 복사를 사용할 수 없습니다. 아래 내용을 선택해 복사하세요.</p><textarea id="copy-box" style="min-height:260px" readonly>${esc(text)}</textarea></div>`);
+  const b = $('#copy-box'); b.focus(); b.select();
+}
+
+/* =========================================================
+   9. Events
+   ========================================================= */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const act = b.dataset.act, id = Number(b.dataset.id);
+  switch (act){
+    case 'nav': ui.view = b.dataset.view; try { history.replaceState(null, '', '#' + ui.view); } catch(_){} render(); window.scrollTo(0, 0); break;
+    case 'cleaned': markCleaned(id); break;
+    case 'replaced': markReplaced(id); break;
+    case 'stock': addStock(id); break;
+    case 'edit-filter': openFilterForm(id); break;
+    case 'add-filter': openFilterForm(0, Number(b.dataset.device) || 0); break;
+    case 'add-device': openDeviceForm(); break;
+    case 'edit-device': openDeviceForm(id); break;
+    case 'del-device': {
+      const d = state.devices.find(x => x.id === id); const fs = state.filters.filter(f => f.deviceId === id);
+      openConfirm('장비 삭제', `<b>${esc(d.name)}</b>과(와) 연결된 소모품 ${fs.length}개, 관리 이력이 모두 삭제됩니다.`, '삭제', () => {
+        snapshot(); const ids = new Set(fs.map(f => f.id));
+        state.devices = state.devices.filter(x => x.id !== id); state.filters = state.filters.filter(f => !ids.has(f.id)); state.history = state.history.filter(h => !ids.has(h.filterId));
+        closeModal(); commit(`${d.name} 장비를 삭제했습니다.`, true);
+      }); break; }
+    case 'del-filter': {
+      const f = state.filters.find(x => x.id === id);
+      openConfirm('소모품 삭제', `<b>${esc(f.name)}</b>와(과) 관리 이력 ${state.history.filter(h => h.filterId === id).length}건이 삭제됩니다.`, '삭제', () => {
+        snapshot(); state.filters = state.filters.filter(x => x.id !== id); state.history = state.history.filter(h => h.filterId !== id);
+        closeModal(); commit(`${f.name}을(를) 삭제했습니다.`, true);
+      }); break; }
+    case 'confirm-ok': confirmFn && confirmFn(); break;
+    case 'modal-close': closeModal(); break;
+    case 'undo': if (undoSnap){ state = normalize(JSON.parse(undoSnap)); undoSnap = null; save(); render(); toast('되돌렸습니다.'); } break;
+    case 'f-st': ui.st = b.dataset.v; $$('[data-act="f-st"]').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === ui.st)); afterTable(); break;
+    case 'f-cat': ui.cat = b.dataset.v; $$('[data-act="f-cat"]').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === ui.cat)); afterTable(); break;
+    case 'f-hist': ui.hist = b.dataset.v; render(); break;
+    case 'summary': ui.summary = buildSummary(); render(); break;
+    case 'cal': { const k = Number(b.dataset.v); ui.cal = k === 0 ? TODAY.slice(0, 7) : addMonths(ui.cal, k); render(); break; }
+    case 'hist-del': snapshot(); state.history = state.history.filter(h => h.id !== id); commit('이력 1건을 삭제했습니다.', true); break;
+    case 'csv-dl': download(`교체주기-${TODAY}.csv`, csvText(), 'text/csv;charset=utf-8'); break;
+    case 'csv-copy': copyText('CSV', csvText()); break;
+    case 'json-dl': download(`교체주기-백업-${TODAY}.json`, JSON.stringify(state, null, 2), 'application/json'); break;
+    case 'json-copy': copyText('백업', JSON.stringify(state, null, 2)); break;
+    case 'json-import': {
+      const raw = $('#import-json').value.trim();
+      try { const s = JSON.parse(raw); if (!validShape(s)) throw new Error('shape');
+        snapshot(); state = normalize(s); state.meta.sample = false; commit(`가져오기 완료 · 장비 ${state.devices.length}대, 소모품 ${state.filters.length}개`, true);
+      } catch(err){ toast('가져오지 못했습니다. devices, filters, history 항목이 있는 백업 JSON인지 확인하세요.'); }
+      break; }
+    case 'reset-sample':
+      openConfirm('예시 데이터 불러오기', '현재 데이터를 예시 데이터(장비 11대, 소모품 14개)로 바꿉니다. 날짜는 오늘 기준으로 다시 만들어집니다.', '불러오기', () => {
+        snapshot(); const s = state.settings; state = seedState(); state.settings = s; closeModal(); ui.summary = null; commit('예시 데이터를 불러왔습니다.', true);
+      }); break;
+    case 'clear-all':
+      openConfirm('모든 데이터 삭제', '모든 장비, 소모품, 이력을 삭제합니다. 설정은 유지됩니다.', '모두 삭제', () => {
+        snapshot(); state = normalize({ devices:[], filters:[], history:[], settings:state.settings, meta:{ sample:false, ko:true } }); closeModal(); ui.summary = null; commit('모든 데이터를 삭제했습니다.', true);
+      }); break;
+  }
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.id === 'device-form') submitDevice(f);
+  else if (f.id === 'filter-form') submitFilter(f);
+  else if (f.id === 'hist-form'){
+    const fid = Number($('#h-filter').value), type = $('#h-type').value, date = $('#h-date').value, note = $('#h-note').value.trim();
+    if (!isDate(date) || date > TODAY){ toast('오늘 또는 그 이전 날짜를 입력하세요.'); return; }
+    const fl = state.filters.find(x => x.id === fid); if (!fl) return;
+    snapshot(); addHistory(fid, type, date, note);
+    const key = type === 'cleaning' ? 'lastCleaning' : 'lastReplacement';
+    let moved = false; if (!fl[key] || date > fl[key]){ fl[key] = date; moved = true; }
+    commit(`기록을 추가했습니다${moved ? ' · 마지막 관리일도 바꿨습니다' : ''}.`, true);
+  }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'q'){ ui.q = e.target.value; afterTable(); }
+});
+document.addEventListener('change', e => {
+  if (!e.target.hasAttribute('data-setting')) return;
+  const S = state.settings, g = id => Number($('#' + id).value);
+  const next = {
+    notifyBefore:g('s-notify'), dueWindow:Math.max(0, Math.round(g('s-due'))), purchaseLead:Math.max(0, Math.round(g('s-lead'))),
+    ufMin:g('s-ufmin'), ufMax:g('s-ufmax'),
+    envFactors:Object.fromEntries(ENV_LEVELS.map(l => [l, g('s-env-' + l)])),
+    weights:{ urgency:g('s-w-urgency'), usage:g('s-w-usage'), env:g('s-w-env'), importance:g('s-w-importance') }
+  };
+  let err = '';
+  if (!(next.ufMin > 0) || !(next.ufMax >= next.ufMin)) err = '사용계수는 0 < 최솟값 ≤ 최댓값이어야 합니다.';
+  else if (Object.values(next.envFactors).some(v => !(v > 0))) err = '환경계수는 0보다 커야 합니다.';
+  else if (Object.values(next.weights).some(v => !(v >= 0)) || Object.values(next.weights).reduce((a, b) => a + b, 0) <= 0) err = '가중치는 0 이상이고 합계가 0보다 커야 합니다.';
+  else if (next.dueWindow > next.notifyBefore) err = '도래 기준은 미리 알림 기준보다 클 수 없습니다.';
+  if (err){ toast(err); render(); return; }
+  Object.assign(S, next); ui.summary = null; commit('설정을 저장하고 모든 소모품을 다시 계산했습니다.');
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+$('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
+
+/* tooltip */
+const tip = $('#tip');
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest && e.target.closest('[data-tip]');
+  if (!t){ tip.hidden = true; return; }
+  tip.textContent = t.getAttribute('data-tip'); tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > window.innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+document.addEventListener('mouseleave', () => { tip.hidden = true; });
+
+/* boot */
+const h0 = (location.hash || '').replace('#', '');
+if (VIEWS[h0]) ui.view = h0;
+save();
+render();
+})();
+</script>
+
+</body>
+</html>
